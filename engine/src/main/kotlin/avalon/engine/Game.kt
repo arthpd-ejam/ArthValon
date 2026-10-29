@@ -41,8 +41,12 @@ class Game(private val random: Random = Random.Default) {
     private var winReason: String? = null
     private var assassinTargetId: String? = null
 
+    private val questCardHistory = mutableListOf<Map<String, QuestCard>>()
+
     /** Test/inspection access to secret facts. Never expose to clients. */
     val secretQuestCards: Map<String, QuestCard> get() = questCards
+    /** Who played what on each completed quest, in order. Tests only. */
+    val secretQuestCardHistory: List<Map<String, QuestCard>> get() = questCardHistory
     val secretLadyHistory: List<LadyRecord> get() = ladyHistory
     val currentQuestNumber: Int get() = questIndex + 1
     val currentLeader: Player? get() = if (phase == Phase.LOBBY) null else seats[leaderSeat]
@@ -133,7 +137,7 @@ class Game(private val random: Random = Random.Default) {
         rejections = 0
         proposedTeam = emptyList()
         votes.clear(); questCards.clear(); ready.clear()
-        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear()
+        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear(); questCardHistory.clear()
         winner = null; winReason = null; assassinTargetId = null
 
         leaderSeat = random.nextInt(n)
@@ -233,6 +237,7 @@ class Game(private val random: Random = Random.Default) {
         questCards[playerId] = card
         if (questCards.size < proposedTeam.size) { bump(); return }
 
+        questCardHistory += questCards.toMap()
         val fails = questCards.values.count { it == QuestCard.FAIL }
         val needed = setup!!.failsRequired(questIndex)
         val succeeded = fails < needed
