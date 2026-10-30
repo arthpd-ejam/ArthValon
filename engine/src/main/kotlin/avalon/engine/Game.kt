@@ -41,8 +41,12 @@ class Game(private val random: Random = Random.Default) {
     private var winReason: String? = null
     private var assassinTargetId: String? = null
 
+    private val questCardHistory = mutableListOf<Map<String, QuestCard>>()
+
     /** Test/inspection access to secret facts. Never expose to clients. */
     val secretQuestCards: Map<String, QuestCard> get() = questCards
+    /** Who played what on each completed quest, in order. Tests only. */
+    val secretQuestCardHistory: List<Map<String, QuestCard>> get() = questCardHistory
     val secretLadyHistory: List<LadyRecord> get() = ladyHistory
     val currentQuestNumber: Int get() = questIndex + 1
     val currentLeader: Player? get() = if (phase == Phase.LOBBY) null else seats[leaderSeat]
@@ -123,6 +127,20 @@ class Game(private val random: Random = Random.Default) {
         beginGame()
     }
 
+    /** Host, any time during a game: abandon it and return everyone to the lobby (same players, roles discarded). */
+    fun restart(hostId: String) {
+        requireHost(hostId)
+        if (phase == Phase.LOBBY) throw IllegalActionException("No game is running")
+        seats.forEach { it.role = null }
+        setup = null
+        questIndex = 0; rejections = 0; proposedTeam = emptyList()
+        votes.clear(); questCards.clear(); ready.clear()
+        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear(); questCardHistory.clear()
+        winner = null; winReason = null; assassinTargetId = null; ladyHolderId = null
+        phase = Phase.LOBBY
+        bump("The host restarted the game. Back to the lobby.")
+    }
+
     private fun beginGame() {
         val n = seats.size
         setup = Setup.forPlayers(n)
@@ -133,7 +151,7 @@ class Game(private val random: Random = Random.Default) {
         rejections = 0
         proposedTeam = emptyList()
         votes.clear(); questCards.clear(); ready.clear()
-        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear()
+        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear(); questCardHistory.clear()
         winner = null; winReason = null; assassinTargetId = null
 
         leaderSeat = random.nextInt(n)
@@ -191,8 +209,7 @@ class Game(private val random: Random = Random.Default) {
     fun vote(playerId: String, vote: Vote) {
         requirePhase(Phase.TEAM_VOTE, "Not the voting phase")
         player(playerId)
-        if (playerId in votes) throw IllegalActionException("You have already voted")
-        votes[playerId] = vote
+        votes[playerId] = vote // a player may change their mind until everyone has voted
         if (votes.size < seats.size) { bump(); return }
 
         val approvals = votes.values.count { it == Vote.APPROVE }
@@ -233,6 +250,7 @@ class Game(private val random: Random = Random.Default) {
         questCards[playerId] = card
         if (questCards.size < proposedTeam.size) { bump(); return }
 
+        questCardHistory += questCards.toMap()
         val fails = questCards.values.count { it == QuestCard.FAIL }
         val needed = setup!!.failsRequired(questIndex)
         val succeeded = fails < needed

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f2a4a"/><stop offset="1" stop-color="#07101f"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#9bc5ff" stop-opacity="0.55"/><stop offset="1" stop-color="#9bc5ff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" rx="22" fill="url(#bg)"/>
+  <rect width="300" height="400" rx="22" fill="url(#glow)"/>
+  <rect x="10" y="10" width="280" height="380" rx="16" fill="none" stroke="#9bc5ff" stroke-width="3" opacity="0.8"/>
+  
+  <path d="M150 55 L205 80 L205 170 Q205 235 150 262 Q95 235 95 170 L95 80 Z" fill="#e3e7ef" stroke="#6b7a93" stroke-width="4"/>
+  <path d="M150 70 L192 90 L192 170 Q192 222 150 245 Q108 222 108 170 L108 90 Z" fill="#3f7fd6"/>
+  <path d="M150 85 L150 230 M115 150 L185 150" stroke="#f3f6fb" stroke-width="10" stroke-linecap="round"/>
+  <path d="M60 300 L240 300 L250 320 L50 320 Z" fill="#8a9bb8"/>
+  <path d="M65 270 L235 270 L240 300 L60 300 Z" fill="#b9c6d9"/>
+  <circle cx="150" cy="40" r="4" fill="#ffe9a8"/><circle cx="60" cy="80" r="3" fill="#cfe6ff"/><circle cx="245" cy="110" r="3" fill="#cfe6ff"/>
+
+  <rect x="30" y="330" width="240" height="44" rx="10" fill="#0b0d14" opacity="0.75"/>
+  <text x="150" y="359" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#9bc5ff" letter-spacing="2">PERCIVAL</text>
+</svg>

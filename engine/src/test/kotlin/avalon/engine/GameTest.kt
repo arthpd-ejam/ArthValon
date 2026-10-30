@@ -212,7 +212,9 @@ class GameTest {
         val g = started(5)
         g.proposeTeam(g.leader().id, listOf("p0", "p1"))
         g.vote("p0", Vote.APPROVE)
-        assertFailsWith<IllegalActionException> { g.vote("p0", Vote.REJECT) }
+        g.vote("p0", Vote.REJECT) // allowed to change until the vote closes
+        assertEquals(Vote.REJECT, g.viewFor("p0").you.yourVote)
+        g.vote("p0", Vote.APPROVE)
         val v = g.viewFor("p1")
         assertEquals(listOf("p0"), v.votedIds)
         assertTrue(v.voteHistory.isEmpty())
@@ -491,6 +493,23 @@ class GameTest {
             if (g.players.map { it.id to it.role } != before) changed = true
         }
         assertTrue(changed)
+    }
+
+    @Test
+    fun `host can restart a running game back to the lobby`() {
+        val g = started(6)
+        assertFailsWith<IllegalActionException> { g.restart("p1") }
+        g.approveTeam()
+        g.restart("p0")
+        assertEquals(Phase.LOBBY, g.phase)
+        assertEquals(6, g.players.size)
+        g.players.forEach { assertNull(it.role); assertNull(g.viewFor(it.id).you.role) }
+        assertNull(g.viewFor("p0").leaderId)
+        assertTrue(g.viewFor("p0").quests.isEmpty() && g.viewFor("p0").voteHistory.isEmpty())
+        assertFailsWith<IllegalActionException> { g.restart("p0") } // nothing running
+        g.start("p0")
+        assertEquals(Phase.ROLE_REVEAL, g.phase)
+        assertNotNull(g.players[0].role)
     }
 
     @Test
