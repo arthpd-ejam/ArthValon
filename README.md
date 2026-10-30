@@ -26,14 +26,14 @@ The app is built automatically by GitHub every time the code changes. You downlo
 6. On the phone, open the **Files** app, find `app-debug.apk` and tap it.
    * Android will say *"For your security, your phone is not allowed to install unknown apps from this source"*. Tap **Settings**, switch on **Allow from this source**, go back and tap **Install**.
    * If Play Protect warns you, choose **Install anyway**. (It's a private app that was never uploaded to the Play Store.)
-7. You now have **Avalon Offline** in your app list.
+7. You now have **ArthValon** (Merlin icon) in your app list.
 
 You only need to do this once per phone, and only on the host phone. Repeat it when you want a newer version.
 
 ## 2. Hosting a game
 
 1. On the host phone, **turn on the Wi-Fi hotspot**: *Settings → Network & internet → Hotspot & tethering → Wi-Fi hotspot*. (It works without a SIM card or mobile data: the hotspot is just a private Wi-Fi network.)
-2. Open **Avalon Offline**. It starts the game server and shows a **QR code and an address** such as `http://192.168.43.1:8080/`.
+2. Open **ArthValon**. It starts the game server and shows a **QR code and an address** such as `http://192.168.43.1:8080/`.
    * If it says *No hotspot found*, the hotspot isn't on yet. Turn it on and the screen updates by itself.
    * Allow the notification when asked: the notification keeps the server running while the screen is off.
 3. Friends **join the hotspot Wi-Fi** on their phones (the hotspot name and password are in the same settings screen), then **scan the QR code** with their camera, or type the address into their browser. They enter a name and they're in.
