@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // The Kotlin Gradle plugin is already on the build classpath (root project applies
+    // kotlin.jvm with `apply false`), so request kotlin.android without a version.
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
