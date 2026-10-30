@@ -201,6 +201,13 @@
 
   // ------------------------------------------------------------ helpers
   function me() { return ui.state ? ui.state.you : null; }
+  /** Leadership passes in seat (join) order; everyone may know who is next. */
+  function nextLeaderId(s) {
+    if (!s || !s.leaderId) return null;
+    const ps = s.players;
+    const i = ps.findIndex((p) => p.id === s.leaderId);
+    return i < 0 ? null : ps[(i + 1) % ps.length].id;
+  }
   function players() { return ui.state ? ui.state.players : []; }
   function byId(id) { return players().find((p) => p.id === id); }
   function nameOf(id) { const p = byId(id); return p ? p.name : '?'; }
@@ -297,16 +304,16 @@
       return `<span class="q ${cls}" title="Quest ${i + 1}: team of ${size}">${size}${star}</span>`;
     }).join('');
     const rejects = [0, 1, 2, 3, 4].map((i) => `<span class="dot ${i < s.rejections ? 'on' : ''} ${i === 4 ? 'last' : ''}"></span>`).join('');
-    const lady = s.ladyEnabled && s.ladyHolderId ? `<div><span class="label">Lady</span> <span class="value">${esc(nameOf(s.ladyHolderId))}</span></div>` : '';
     statusEl.innerHTML = `
       <div class="status-row">
         <div><span class="label">Quest</span> <span class="value">${s.quest} of 5</span></div>
         <div class="track">${track}</div>
       </div>
-      <div class="status-row">
-        <div style="min-width:0"><span class="label">Leader</span> <span class="value">${esc(nameOf(s.leaderId))}</span></div>
-        ${lady}
-        <div class="rejects" title="Rejected proposals this quest: ${s.rejections} of 5"><span class="label">Rejects</span> ${rejects}</div>
+      <div class="status-grid">
+        <div class="cell"><span class="label">Leader</span><span class="value">${esc(nameOf(s.leaderId))}</span></div>
+        <div class="cell"><span class="label">Next</span><span class="value muted">${esc(nameOf(nextLeaderId(s)))}</span></div>
+        ${s.ladyEnabled && s.ladyHolderId ? `<div class="cell"><span class="label">Lady</span><span class="value">${esc(nameOf(s.ladyHolderId))}</span></div>` : ''}
+        <div class="cell" title="Rejected proposals this quest: ${s.rejections} of 5"><span class="label">Rejects</span><span class="rejects">${rejects}</span></div>
       </div>
       <div class="status-tools">
         <button class="icon-btn" data-action="showRole">🎭 My role</button>
@@ -576,9 +583,9 @@
   // Everyone's connection status; the host can open a disconnected seat to be rejoined by name.
   function playersHtml(s) {
     const rejoinable = (ui.server && ui.server.rejoinable) || [];
-    return `<ul class="list">${s.players.map((p) => `
-      <li>${avatar(p)}<span class="name">${esc(p.name)}${isMe(p.id) ? ' <span class="muted">(you)</span>' : ''}</span>
-        ${p.id === s.leaderId ? '<span class="tag gold">Leader</span>' : ''}
+    return `${s.leaderId ? '<p class="muted" style="font-size:14px;margin:0 0 6px">Leadership passes down this list in order (and wraps around).</p>' : ''}<ul class="list">${s.players.map((p, i) => `
+      <li><span class="muted" style="width:18px;text-align:right">${i + 1}</span>${avatar(p)}<span class="name">${esc(p.name)}${isMe(p.id) ? ' <span class="muted">(you)</span>' : ''}</span>
+        ${p.id === s.leaderId ? '<span class="tag gold">Leader</span>' : p.id === nextLeaderId(s) ? '<span class="tag">Next leader</span>' : ''}
         ${s.ladyHolderId === p.id ? '<span class="tag">Lady</span>' : ''}
         <span class="conn ${p.connected ? '' : 'off'}" title="${p.connected ? 'connected' : 'disconnected'}"></span>
         ${s.you.isHost && !p.connected && !isMe(p.id) ? (rejoinable.includes(p.id)

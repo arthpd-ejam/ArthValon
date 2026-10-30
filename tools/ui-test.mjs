@@ -216,6 +216,12 @@ while (guard++ < 400) {
     for (const p of pages) await p.evaluate(() => { const m = document.getElementById('modal'); if (!m.classList.contains('hidden')) m.querySelector('.modal-x').click(); });
   }
   if (!roleModalShot && phase === 'TEAM_SELECTION') {
+    // Status bar shows the current and the next leader (seat order).
+    const st = states[0];
+    const idx = st.players.findIndex((p) => p.id === st.leaderId);
+    const nextName = st.players[(idx + 1) % st.players.length].name;
+    const bar = await pages[0].textContent('#status');
+    if (!bar.includes('Next') || !bar.includes(nextName)) fail('status bar does not show the next leader: ' + bar);
     // "My role" in the status bar shows the role card again mid-game.
     await pages[3].click('[data-action=showRole]');
     await pages[3].waitForSelector('#modal .role-name');
