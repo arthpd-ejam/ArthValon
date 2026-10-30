@@ -117,8 +117,9 @@ class ServerProtocolTest {
             assertEquals(Phase.TEAM_SELECTION, game.phase)
             assertEquals(version, game.viewFor(leader.playerId!!).version)
 
-            // A good player cannot play Fail on a quest.
-            val ids = t.bots.map { it.playerId!! }
+            // A good player cannot play Fail on a quest. Make sure the team contains a good player.
+            val goodId = game.players.first { it.role!!.good }.id
+            val ids = listOf(goodId) + game.players.map { it.id }.filter { it != goodId }
             leader.action("proposeTeam") { putJsonArray("team") { ids.take(2).forEach { add(JsonPrimitive(it)) } } }
             t.await { game.phase == Phase.TEAM_VOTE }
             t.bots.forEach { it.action("vote") { put("vote", "APPROVE") } }
