@@ -41,11 +41,24 @@ You only need to do this once per phone, and only on the host phone. Repeat it w
 5. When 5–10 people have joined, the host taps **Start game**. The Lady of the Lake is on automatically with 7 or more players; with 5–6 the host can switch it on in the lobby.
 6. Play! Phones that fall asleep or lose Wi-Fi simply reconnect and show the same screen again. If a friend's browser has really lost its seat (for example they cleared their browser data), the host opens the player list, taps **Let … rejoin**, and the friend joins again with the same name.
 7. At the end everyone sees all roles and the full vote history. The host can tap **Play again** to start a new game with the same people.
+8. Need to abandon a game half-way (someone left, wrong settings)? The host opens **Players, votes & quest history** at the bottom of any screen and taps **Restart game (back to lobby)**. Everyone returns to the lobby, players can be added or removed, and new roles are dealt when the host starts again.
 
 Tips
 * Keep the host phone plugged in or charged; it's doing the work.
 * Phones occasionally show *"No internet"* on the hotspot. That's expected and fine. If a phone asks whether to *stay connected*, say yes.
 * iPhones: open the address in Safari. If the camera doesn't offer to open the link, type it in by hand.
+
+## 2b. Using the real Avalon card pictures
+
+The app ships with its own drawn role cards. If you'd rather see the card art you know from the physical game, add pictures of your own cards and they are used automatically:
+
+1. Photograph or scan each role card (or use images you already have) and save them as PNG files with exactly these names:
+   `merlin.png`, `percival.png`, `loyal_servant.png`, `morgana.png`, `assassin.png`, `minion.png`.
+   Portrait orientation, roughly 600×800 pixels is plenty; keep each file under ~300 KB so phones load them quickly.
+2. Put them in the folder `server/src/main/resources/web/img/` (next to the `.svg` files) and commit/push, or upload them through GitHub's web interface (**Add file → Upload files** inside that folder).
+3. GitHub Actions builds a new APK with the pictures bundled. Install it on the host phone as in section 1.
+
+If a `.png` is missing the drawn `.svg` card is shown instead. (The official artwork is copyrighted by its publisher, which is why it is not included in this repository; using photos of cards you own for a private game among friends is up to you.)
 
 ## 3. How the game works (rules implemented)
 

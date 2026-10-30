@@ -303,6 +303,22 @@ await Promise.all(pages.map((p) => waitFor(p, (s) => s.phase === 'ROLE_REVEAL', 
 const s2 = await state(pages[1]);
 if (s2.players.length !== 5 || s2.quests.length) fail('play again did not reset with the same players');
 
+// Role art must have loaded from the host (PNG if present, otherwise the bundled SVG).
+await pages[1].click('[data-action=toggleRole]');
+await pages[1].waitForSelector('.role-img');
+const imgOk = await pages[1].evaluate(() => { const i = document.querySelector('.role-img'); return i.complete && i.naturalWidth > 0; });
+if (!imgOk) fail('role image did not load');
+
+// The host can restart a running game: everyone goes back to the lobby with no roles.
+await pages[0].click('[data-action=openHistory]');
+await pages[0].waitForSelector('[data-action=restart]');
+await shot(pages[0], 'host-panel-restart');
+pages[0].once('dialog', (d) => d.accept());
+await pages[0].click('[data-action=restart]');
+await Promise.all(pages.map((p) => waitFor(p, (s) => s.phase === 'LOBBY', 'lobby after restart')));
+const s3 = await state(pages[1]);
+if (s3.players.length !== 5 || s3.you.role) fail('restart did not return to a clean lobby');
+
 // ---------------------------------------------------------------- offline check
 const external = requests.filter((r) => !r.url.startsWith(origin + '/') && r.url !== origin);
 if (external.length) fail('requests to other hosts: ' + JSON.stringify(external.slice(0, 10)));

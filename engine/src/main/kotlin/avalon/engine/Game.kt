@@ -127,6 +127,20 @@ class Game(private val random: Random = Random.Default) {
         beginGame()
     }
 
+    /** Host, any time during a game: abandon it and return everyone to the lobby (same players, roles discarded). */
+    fun restart(hostId: String) {
+        requireHost(hostId)
+        if (phase == Phase.LOBBY) throw IllegalActionException("No game is running")
+        seats.forEach { it.role = null }
+        setup = null
+        questIndex = 0; rejections = 0; proposedTeam = emptyList()
+        votes.clear(); questCards.clear(); ready.clear()
+        quests.clear(); voteHistory.clear(); ladyHistory.clear(); ladyFormerHolders.clear(); questCardHistory.clear()
+        winner = null; winReason = null; assassinTargetId = null; ladyHolderId = null
+        phase = Phase.LOBBY
+        bump("The host restarted the game. Back to the lobby.")
+    }
+
     private fun beginGame() {
         val n = seats.size
         setup = Setup.forPlayers(n)

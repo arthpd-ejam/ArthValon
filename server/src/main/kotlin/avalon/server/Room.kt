@@ -175,6 +175,7 @@ class Room(
                     "ladyConfirm" -> game.ladyConfirm(pid)
                     "assassinate" -> game.assassinate(pid, obj.str("playerId") ?: throw IllegalActionException("Missing player"))
                     "playAgain" -> game.playAgain(pid)
+                    "restart" -> { game.restart(pid); rejoinable.clear() }
                     else -> throw IllegalActionException("Unknown action")
                 }
             }

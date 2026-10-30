@@ -494,6 +494,23 @@ class GameTest {
     }
 
     @Test
+    fun `host can restart a running game back to the lobby`() {
+        val g = started(6)
+        assertFailsWith<IllegalActionException> { g.restart("p1") }
+        g.approveTeam()
+        g.restart("p0")
+        assertEquals(Phase.LOBBY, g.phase)
+        assertEquals(6, g.players.size)
+        g.players.forEach { assertNull(it.role); assertNull(g.viewFor(it.id).you.role) }
+        assertNull(g.viewFor("p0").leaderId)
+        assertTrue(g.viewFor("p0").quests.isEmpty() && g.viewFor("p0").voteHistory.isEmpty())
+        assertFailsWith<IllegalActionException> { g.restart("p0") } // nothing running
+        g.start("p0")
+        assertEquals(Phase.ROLE_REVEAL, g.phase)
+        assertNotNull(g.players[0].role)
+    }
+
+    @Test
     fun `actions in the wrong phase are rejected`() {
         val g = lobby(5)
         assertFailsWith<IllegalActionException> { g.proposeTeam("p0", listOf("p0", "p1")) }

@@ -191,11 +191,10 @@
       if (state.phase === 'ROLE_REVEAL' && (!prev || prev.phase !== 'ROLE_REVEAL')) ui.roleShown = false;
     }
     if (state.phase === 'LOBBY') ui.roleShown = false;
-    if (state.lastEvent && state.lastEvent !== ui.lastEventShown) {
-      ui.lastEventShown = state.lastEvent;
-      if (prev) banner(state.lastEvent);
-    }
+    const newEvent = state.lastEvent && state.lastEvent !== ui.lastEventShown;
+    ui.lastEventShown = state.lastEvent;
     render();
+    if (newEvent && prev) banner(state.lastEvent); // after render, so it sits below the status bar
   }
 
   // ------------------------------------------------------------ helpers
@@ -215,14 +214,32 @@
     return `<div class="names">${ids.map((id) => `<span class="tag">${esc(nameOf(id))}</span>`).join('')}</div>`;
   }
 
+  // Card art: the real card scans go in img/<key>.png (see README); the bundled .svg is the fallback.
   const ROLE_INFO = {
-    MERLIN: { name: 'Merlin', loyalty: 'GOOD', text: 'You know who is evil. Guide the good team without being obvious — if the Assassin identifies you at the end, evil wins.' },
-    PERCIVAL: { name: 'Percival', loyalty: 'GOOD', text: 'You see two names: one is Merlin, the other is Morgana pretending to be Merlin. Work out which is which and protect Merlin.' },
-    LOYAL_SERVANT: { name: 'Loyal Servant of Arthur', loyalty: 'GOOD', text: 'You know nothing but your loyalty. Watch the votes and quests closely and help good succeed on three quests.' },
-    MORGANA: { name: 'Morgana', loyalty: 'EVIL', text: 'You appear as Merlin to Percival. Sow confusion, fail quests and help the Assassin find the real Merlin.' },
-    ASSASSIN: { name: 'Assassin', loyalty: 'EVIL', text: 'If good wins three quests, you get one shot: name Merlin and evil wins anyway.' },
-    MINION: { name: 'Minion of Mordred', loyalty: 'EVIL', text: 'You know your fellow evil players. Get onto quests and fail them, or make the votes fail five times in a row.' },
+    MERLIN: { name: 'Merlin', img: 'merlin', loyalty: 'GOOD',
+      text: 'The wise wizard. You know who is evil, but the Assassin is hunting you.',
+      tips: ['Steer the good players away from evil team members without being obvious.', 'Never say outright who is evil: if the Assassin works out who you are at the end, evil wins.', 'Let Percival and the Servants take the credit for good calls.'] },
+    PERCIVAL: { name: 'Percival', img: 'percival', loyalty: 'GOOD',
+      text: 'The loyal knight who knows Merlin\u2019s face, but Morgana looks the same to you.',
+      tips: ['You see two names: one is Merlin, the other is Morgana pretending to be Merlin.', 'Watch which of the two gives good advice and trust that one.', 'Act like you might be Merlin to draw the Assassin\u2019s attention away from the real one.'] },
+    LOYAL_SERVANT: { name: 'Loyal Servant of Arthur', img: 'loyal_servant', loyalty: 'GOOD',
+      text: 'A faithful knight. You know nothing but your own loyalty.',
+      tips: ['Study the votes: evil players tend to approve teams that contain evil.', 'A failed quest means someone on that team is evil.', 'Help good win three quests, and remember you could be the Assassin\u2019s decoy.'] },
+    MORGANA: { name: 'Morgana', img: 'morgana', loyalty: 'EVIL',
+      text: 'The sorceress. Percival sees you as a possible Merlin.',
+      tips: ['Act like Merlin so Percival trusts you instead of the real one.', 'Get onto quests and play Fail at the right moment.', 'Help the Assassin figure out who the real Merlin is.'] },
+    ASSASSIN: { name: 'Assassin', img: 'assassin', loyalty: 'EVIL',
+      text: 'The blade in the dark. If good wins three quests, you get one shot at Merlin.',
+      tips: ['Watch who quietly steers the good players: that is probably Merlin.', 'Fail quests when you are on them, and make votes fail five times if you can.', 'At the end, discuss with your team and name Merlin to win.'] },
+    MINION: { name: 'Minion of Mordred', img: 'minion', loyalty: 'EVIL',
+      text: 'A servant of darkness. You know your fellow evil players.',
+      tips: ['Get picked for quests and play Fail (one is usually enough).', 'Reject teams full of good players; approve teams that include evil.', 'Help identify Merlin for the Assassin at the end.'] },
   };
+
+  function roleImage(info, cls) {
+    return `<img class="${cls || 'role-img'}" src="img/${info.img}.png" alt="" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='img/${info.img}.svg'}">`;
+  }
+
 
   // ------------------------------------------------------------ render
   function render() {
@@ -345,10 +362,12 @@
 
     const card = ui.roleShown
       ? `<div class="card role-card ${good ? 'good' : 'evil'}" data-action="toggleRole">
+           ${roleImage(info)}
            <div class="loyalty">${good ? 'Good' : 'Evil'}</div>
            <div class="role-name">${esc(info.name)}</div>
            <p class="muted" style="font-size:16px">${esc(info.text)}</p>
            ${knowledge}
+           <div class="know"><h3>How to play</h3><ul class="tips">${(info.tips || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
            <p class="muted" style="margin:14px 0 0;font-size:14px">Tap the card to hide it</p>
          </div>`
       : `<div class="card role-card covered" data-action="toggleRole" role="button" tabindex="0">
@@ -362,7 +381,7 @@
       <div class="actions">
         ${done ? `<button class="btn secondary" disabled>Waiting for the others…</button>` : `<button class="btn big" data-action="confirmRole">I know my role</button>`}
         ${m.isHost && done && ready < n ? `<button class="btn ghost" data-action="forceContinue">Skip waiting (host)</button>` : ''}
-      </div>`;
+      </div>${historyButton()}`;
   }
 
   // ---- team selection
@@ -495,7 +514,7 @@
     return `
       <div class="hero"><div class="eyebrow">Lady of the Lake · private</div><h1>${esc(nameOf(last.targetId))} is…</h1></div>
       <div class="card role-card ${good ? 'good' : 'evil'}"><div class="big-result ${good ? 'good' : 'evil'}">${good ? 'GOOD' : 'EVIL'}</div><p class="muted">Only you can see this. You may lie about it.</p></div>
-      <div class="actions"><button class="btn big" data-action="ladyConfirm">Got it — pass the Lady</button></div>`;
+      <div class="actions"><button class="btn big" data-action="ladyConfirm">Got it — pass the Lady</button></div>${historyButton()}`;
   }
 
   // ---- assassination
@@ -513,7 +532,7 @@
     return `
       <div class="hero"><div class="eyebrow">You are the Assassin</div><h1>Who is Merlin?</h1><p>Discuss with your team, then choose. This ends the game.</p></div>
       <ul class="pick">${picks}</ul>
-      <div class="actions"><button class="btn big evil" data-action="assassinate" ${ui.pickedAssassin ? '' : 'disabled'}>Assassinate ${ui.pickedAssassin ? esc(nameOf(ui.pickedAssassin)) : ''}</button></div>`;
+      <div class="actions"><button class="btn big evil" data-action="assassinate" ${ui.pickedAssassin ? '' : 'disabled'}>Assassinate ${ui.pickedAssassin ? esc(nameOf(ui.pickedAssassin)) : ''}</button></div>${historyButton()}`;
   }
 
   // ---- game over
@@ -525,7 +544,7 @@
       const r = g.roles[p.id];
       const info = ROLE_INFO[r] || { name: r, loyalty: '' };
       const isGood = info.loyalty === 'GOOD';
-      return `<tr><td>${esc(p.name)}${isMe(p.id) ? ' (you)' : ''}</td><td class="${isGood ? 'good-text' : 'evil-text'}">${esc(info.name)}</td><td>${g.assassinTargetId === p.id ? '🎯' : ''}</td></tr>`;
+      return `<tr><td>${esc(p.name)}${isMe(p.id) ? ' (you)' : ''}</td><td class="${isGood ? 'good-text' : 'evil-text'}">${info.img ? roleImage(info, 'role-thumb') : ''}${esc(info.name)}</td><td>${g.assassinTargetId === p.id ? '🎯' : ''}</td></tr>`;
     }).join('');
     return `
       <div class="hero"><div class="eyebrow">Game over</div><div class="big-result ${good ? 'good' : 'evil'}">${good ? 'GOOD WINS' : 'EVIL WINS'}</div><p>${esc(g.reason)}</p></div>
@@ -554,7 +573,8 @@
           ? '<span class="tag ok">can rejoin</span>'
           : `<button class="btn small secondary" data-action="allowRejoin" data-id="${esc(p.id)}">Let ${esc(p.name)} rejoin</button>`) : ''}
       </li>`).join('')}</ul>
-      ${s.you.isHost ? '<p class="muted" style="font-size:14px;margin-top:8px">If a friend lost their seat (new browser, cleared data), let them rejoin: they join again with the same name.</p>' : ''}`;
+      ${s.you.isHost ? '<p class="muted" style="font-size:14px;margin-top:8px">If a friend lost their seat (new browser, cleared data), let them rejoin: they join again with the same name.</p>' : ''}
+      ${s.you.isHost && s.phase !== 'LOBBY' ? '<button class="btn danger" data-action="restart" style="margin-top:8px">Restart game (back to lobby)</button>' : ''}`;
   }
 
   function questHistoryHtml(s) {
@@ -652,6 +672,7 @@
       case 'playAgain': act('playAgain'); break;
       case 'openHistory': ui.historyOpen = true; renderHistory(); break;
       case 'allowRejoin': act('allowRejoin', { playerId: id }); break;
+      case 'restart': if (confirm('Abandon this game and send everyone back to the lobby? Roles will be dealt again.')) { closeHistory(); act('restart'); } break;
       case 'closeHistory': closeHistory(); break;
       default: break;
     }

@@ -260,3 +260,9 @@ th { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spa
 .subtle-link { background: none; border: none; color: var(--muted); text-decoration: underline; padding: 12px; min-height: 44px; cursor: pointer; font-size: 15px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .icon-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-weight: 700; font-size: 15px; cursor: pointer; }
+
+/* ---------- role art ---------- */
+.role-img { display: block; width: 180px; max-width: 60%; height: auto; margin: 0 auto 10px; border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+.role-thumb { width: 28px; height: 37px; border-radius: 4px; vertical-align: middle; margin-right: 8px; object-fit: cover; }
+.tips { margin: 0; padding-left: 18px; font-size: 15px; color: var(--text); }
+.tips li { margin: 4px 0; }
