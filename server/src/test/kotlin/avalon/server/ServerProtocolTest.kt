@@ -246,7 +246,9 @@ class ServerProtocolTest {
             assertTrue(r.bodyAsText().contains("<html", ignoreCase = true))
             assertEquals("no-cache", r.headers["Cache-Control"])
             assertEquals("ok", client.get("http://127.0.0.1:${server.boundPort}/health").bodyAsText())
-            assertEquals(HttpStatusCode.NotFound, client.get("http://127.0.0.1:${server.boundPort}/nope.js").status)
+            // Unknown paths fall back to the single page (so a mistyped path still opens the game).
+            assertTrue(client.get("http://127.0.0.1:${server.boundPort}/anything").bodyAsText().contains("<html", ignoreCase = true))
+            assertTrue(client.get("http://127.0.0.1:${server.boundPort}/app.js").bodyAsText().contains("WebSocket"))
             client.close()
         } finally { server.stop() }
     }
