@@ -193,10 +193,40 @@ console.log('Playing…');
 const good = (page) => ['MERLIN', 'PERCIVAL', 'LOYAL_SERVANT'].includes(roles[page.name]);
 let guard = 0;
 let historyShot = false;
+let announced = 0;
+let roleModalShot = false;
 while (guard++ < 400) {
   const states = await Promise.all(pages.map(state));
   const phase = states[0].phase;
   if (phase === 'GAME_OVER') break;
+  if (states.every((x) => x && x.quests.length > announced)) {
+    // Every tab must show the big quest-result announcement.
+    for (const p of pages) {
+      const shown = await p.evaluate(() => !document.getElementById('modal').classList.contains('hidden') && /Quest \d result/.test(document.getElementById('modal-body').textContent));
+      if (!shown) fail(`${p.name}: no quest announcement after quest ${states[0].quests.length}`);
+    }
+    await shot(pages[1], `q${states[0].quests.length}-announcement`);
+    if (announced === 0) {
+      // The x button closes it; the other tabs close by themselves after about 5 seconds.
+      await pages[1].click('#modal .modal-x');
+      await pages[1].waitForSelector('#modal', { state: 'hidden' });
+      await pages[2].waitForSelector('#modal', { state: 'hidden', timeout: 9000 });
+    }
+    announced = states[0].quests.length;
+    for (const p of pages) await p.evaluate(() => { const m = document.getElementById('modal'); if (!m.classList.contains('hidden')) m.querySelector('.modal-x').click(); });
+  }
+  if (!roleModalShot && phase === 'TEAM_SELECTION') {
+    // "My role" in the status bar shows the role card again mid-game.
+    await pages[3].click('[data-action=showRole]');
+    await pages[3].waitForSelector('#modal .role-name');
+    const txt = await pages[3].textContent('#modal-body');
+    const expected = { MERLIN: 'Merlin', PERCIVAL: 'Percival', LOYAL_SERVANT: 'Loyal Servant', MORGANA: 'Morgana', ASSASSIN: 'Assassin' }[roles[pages[3].name]];
+    if (!txt.includes(expected)) fail('role modal shows the wrong role');
+    await shot(pages[3], 'my-role-modal');
+    await pages[3].click('#modal [data-action=closeModal]');
+    await pages[3].waitForSelector('#modal', { state: 'hidden' });
+    roleModalShot = true;
+  }
   let acted = false;
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i], s = states[i];
@@ -221,8 +251,17 @@ while (guard++ < 400) {
         await shot(page, `q${s.quest}-vote`);
         // Reject the very first proposal once to exercise the rejection track, then approve.
         const reject = s.quest === 1 && s.rejections === 0;
-        await page.click(`[data-action=vote][data-vote=${reject ? 'REJECT' : 'APPROVE'}]`);
-        await waitFor(page, (x) => x.version > s.version, 'vote registered');
+        if (reject && i === 0) {
+          // Votes can be changed until everyone has voted: approve first, then switch to reject.
+          await page.click('[data-action=vote][data-vote=APPROVE]');
+          const x1 = await waitFor(page, (x) => x.you.yourVote === 'APPROVE', 'first vote');
+          await page.click('[data-action=vote][data-vote=REJECT]');
+          await waitFor(page, (x) => x.you.yourVote === 'REJECT' && x.version > x1.version, 'changed vote');
+          await shot(page, 'vote-changed');
+        } else {
+          await page.click(`[data-action=vote][data-vote=${reject ? 'REJECT' : 'APPROVE'}]`);
+          await waitFor(page, (x) => x.version > s.version, 'vote registered');
+        }
         await shot(page, `q${s.quest}-vote-waiting`);
         acted = true;
         break;
@@ -273,8 +312,10 @@ while (guard++ < 400) {
         }
         const btn = await page.$('[data-action=pickAssassin]:not([disabled])');
         await btn.click();
-        page.once('dialog', (d) => d.accept());
         await page.click('[data-action=assassinate]:not([disabled])');
+        await page.waitForSelector('[data-action=confirmYes]');
+        await shot(page, 'confirm-dialog');
+        await page.click('[data-action=confirmYes]');
         acted = true;
         break;
       }
@@ -313,8 +354,9 @@ if (!imgOk) fail('role image did not load');
 await pages[0].click('[data-action=openHistory]');
 await pages[0].waitForSelector('[data-action=restart]');
 await shot(pages[0], 'host-panel-restart');
-pages[0].once('dialog', (d) => d.accept());
 await pages[0].click('[data-action=restart]');
+await pages[0].waitForSelector('[data-action=confirmYes]');
+await pages[0].click('[data-action=confirmYes]');
 await Promise.all(pages.map((p) => waitFor(p, (s) => s.phase === 'LOBBY', 'lobby after restart')));
 const s3 = await state(pages[1]);
 if (s3.players.length !== 5 || s3.you.role) fail('restart did not return to a clean lobby');

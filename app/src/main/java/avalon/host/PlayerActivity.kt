@@ -3,6 +3,7 @@ package avalon.host
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.WindowManager
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -31,6 +32,7 @@ class PlayerActivity : AppCompatActivity() {
             textZoom = 100
         }
         web.webViewClient = WebViewClient()
+        web.webChromeClient = WebChromeClient() // without this, JS alert/confirm dialogs are silently cancelled
         web.setBackgroundColor(0xFF0F1117.toInt())
         if (savedInstanceState == null) {
             web.loadUrl(intent.getStringExtra(EXTRA_URL) ?: "http://127.0.0.1:${HostService.PORT}/")

@@ -209,8 +209,7 @@ class Game(private val random: Random = Random.Default) {
     fun vote(playerId: String, vote: Vote) {
         requirePhase(Phase.TEAM_VOTE, "Not the voting phase")
         player(playerId)
-        if (playerId in votes) throw IllegalActionException("You have already voted")
-        votes[playerId] = vote
+        votes[playerId] = vote // a player may change their mind until everyone has voted
         if (votes.size < seats.size) { bump(); return }
 
         val approvals = votes.values.count { it == Vote.APPROVE }

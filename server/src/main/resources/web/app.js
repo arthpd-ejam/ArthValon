@@ -193,8 +193,10 @@
     if (state.phase === 'LOBBY') ui.roleShown = false;
     const newEvent = state.lastEvent && state.lastEvent !== ui.lastEventShown;
     ui.lastEventShown = state.lastEvent;
+    if (prev && prev.phase !== state.phase && modalOnYes) closeModal(); // a pending confirmation is stale after a phase change
     render();
     if (newEvent && prev) banner(state.lastEvent); // after render, so it sits below the status bar
+    if (prev && state.quests.length > prev.quests.length) announceQuest(state.quests[state.quests.length - 1]);
   }
 
   // ------------------------------------------------------------ helpers
@@ -235,6 +237,23 @@
       text: 'A servant of darkness. You know your fellow evil players.',
       tips: ['Get picked for quests and play Fail (one is usually enough).', 'Reject teams full of good players; approve teams that include evil.', 'Help identify Merlin for the Assassin at the end.'] },
   };
+
+  /** The inside of a role card: picture, name, loyalty, what you know, how to play. */
+  function roleCardHtml(m) {
+    const info = ROLE_INFO[m.role] || { name: m.role, loyalty: m.loyalty, text: '', tips: [] };
+    const good = m.loyalty === 'GOOD';
+    let knowledge = '';
+    if (m.role === 'MERLIN') knowledge = `<div class="know"><h3>These players are evil</h3>${nameTags(m.knownEvil)}</div>`;
+    else if (m.role === 'PERCIVAL') knowledge = `<div class="know"><h3>Merlin and Morgana (in some order)</h3>${nameTags(m.merlinOrMorgana)}</div>`;
+    else if (!good) knowledge = `<div class="know"><h3>Your fellow evil players</h3>${m.evilTeammates.length ? nameTags(m.evilTeammates) : '<span class="muted">none</span>'}</div>`;
+    else knowledge = `<div class="know"><h3>What you know</h3><span class="muted">Only your own loyalty.</span></div>`;
+    return `${info.img ? roleImage(info) : ''}
+      <div class="loyalty">${good ? 'Good' : 'Evil'}</div>
+      <div class="role-name">${esc(info.name)}</div>
+      <p class="muted" style="font-size:16px">${esc(info.text)}</p>
+      ${knowledge}
+      <div class="know"><h3>How to play</h3><ul class="tips">${(info.tips || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
+  }
 
   function roleImage(info, cls) {
     return `<img class="${cls || 'role-img'}" src="img/${info.img}.png" alt="" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='img/${info.img}.svg'}">`;
@@ -288,6 +307,10 @@
         <div style="min-width:0"><span class="label">Leader</span> <span class="value">${esc(nameOf(s.leaderId))}</span></div>
         ${lady}
         <div class="rejects" title="Rejected proposals this quest: ${s.rejections} of 5"><span class="label">Rejects</span> ${rejects}</div>
+      </div>
+      <div class="status-tools">
+        <button class="icon-btn" data-action="showRole">🎭 My role</button>
+        <button class="icon-btn" data-action="openHistory">📜 Players &amp; history</button>
       </div>`;
   }
 
@@ -354,20 +377,9 @@
     const ready = s.readyIds.length;
     const n = s.players.length;
     const done = m.pendingAction !== 'CONFIRM_ROLE';
-    let knowledge = '';
-    if (m.role === 'MERLIN') knowledge = `<div class="know"><h3>These players are evil</h3>${nameTags(m.knownEvil)}</div>`;
-    else if (m.role === 'PERCIVAL') knowledge = `<div class="know"><h3>Merlin and Morgana (in some order)</h3>${nameTags(m.merlinOrMorgana)}</div>`;
-    else if (!good) knowledge = `<div class="know"><h3>Your fellow evil players</h3>${m.evilTeammates.length ? nameTags(m.evilTeammates) : '<span class="muted">none</span>'}</div>`;
-    else knowledge = `<div class="know"><h3>What you know</h3><span class="muted">Only your own loyalty.</span></div>`;
-
     const card = ui.roleShown
       ? `<div class="card role-card ${good ? 'good' : 'evil'}" data-action="toggleRole">
-           ${roleImage(info)}
-           <div class="loyalty">${good ? 'Good' : 'Evil'}</div>
-           <div class="role-name">${esc(info.name)}</div>
-           <p class="muted" style="font-size:16px">${esc(info.text)}</p>
-           ${knowledge}
-           <div class="know"><h3>How to play</h3><ul class="tips">${(info.tips || []).map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
+           ${roleCardHtml(m)}
            <p class="muted" style="margin:14px 0 0;font-size:14px">Tap the card to hide it</p>
          </div>`
       : `<div class="card role-card covered" data-action="toggleRole" role="button" tabindex="0">
@@ -434,19 +446,19 @@
     const n = s.players.length;
     const teamList = `<div class="card"><h3>Proposed team · Quest ${s.quest}</h3><ul class="list">${team.map((id) => `<li>${avatar(byId(id))}<span class="name">${esc(nameOf(id))}${isMe(id) ? ' (you)' : ''}</span>${id === s.leaderId ? '<span class="tag gold">Leader</span>' : ''}</li>`).join('')}</ul></div>`;
     const progress = `<div class="card flat"><h3>${voted} of ${n} voted</h3><div class="votes">${s.players.map((p) => `<div class="v ${s.votedIds.includes(p.id) ? '' : 'pending'}"><span class="name">${esc(p.name)}</span><span>${s.votedIds.includes(p.id) ? '✓' : '…'}</span></div>`).join('')}</div></div>`;
-    if (m.pendingAction === 'VOTE') {
+    const mine = m.yourVote;
+    const buttons = `<div class="actions"><div class="row">
+          <button class="btn big good ${mine === 'APPROVE' ? 'chosen' : mine ? 'unchosen' : ''}" data-action="vote" data-vote="APPROVE">Approve</button>
+          <button class="btn big evil ${mine === 'REJECT' ? 'chosen' : mine ? 'unchosen' : ''}" data-action="vote" data-vote="REJECT">Reject</button>
+        </div>${mine ? '<p class="voted-note">You can change your vote until everyone has voted.</p>' : ''}</div>`;
+    if (!mine) {
       return `
         <div class="hero"><div class="eyebrow">Vote · Rejection ${s.rejections} of 5</div><h1>${esc(nameOf(s.leaderId))} proposes</h1><p>Approve or reject this team. Votes are revealed together.</p></div>
-        ${teamList}
-        <div class="actions"><div class="row">
-          <button class="btn big good" data-action="vote" data-vote="APPROVE">Approve</button>
-          <button class="btn big evil" data-action="vote" data-vote="REJECT">Reject</button>
-        </div></div>
-        ${historyButton()}`;
+        ${teamList}${buttons}`;
     }
     return `
-      <div class="hero"><div class="eyebrow">Vote · Quest ${s.quest}</div><h1>You voted ${m.yourVote === 'APPROVE' ? '👍 Approve' : '👎 Reject'}</h1><p class="pulse">Waiting for everyone…</p></div>
-      ${teamList}${progress}${historyButton()}`;
+      <div class="hero"><div class="eyebrow">Vote · Quest ${s.quest}</div><h1>You voted ${mine === 'APPROVE' ? '👍 Approve' : '👎 Reject'}</h1><p class="pulse">Waiting for everyone…</p></div>
+      ${teamList}${progress}${buttons}`;
   }
 
   // ---- quest
@@ -622,6 +634,45 @@
     clearTimeout(bannerTimer);
     bannerTimer = setTimeout(() => bannerEl.classList.add('hidden'), 7000);
   }
+  // ---- modal
+  const modalEl = $('modal');
+  const modalBody = $('modal-body');
+  let modalTimer = null;
+  let modalOnYes = null;
+  function showModal(html, opts) {
+    opts = opts || {};
+    clearTimeout(modalTimer);
+    modalOnYes = opts.onYes || null;
+    modalBody.innerHTML = html;
+    modalEl.querySelector('.modal-card').className = 'modal-card ' + (opts.cls || '');
+    modalEl.classList.remove('hidden');
+    if (opts.autoCloseMs) modalTimer = setTimeout(closeModal, opts.autoCloseMs);
+  }
+  function closeModal() { clearTimeout(modalTimer); modalOnYes = null; modalEl.classList.add('hidden'); modalBody.innerHTML = ''; }
+  /** In-page confirmation: the browser's native dialog is silently cancelled inside Android WebViews. */
+  function confirmDialog(text, onYes) {
+    showModal(`<p style="font-size:19px;font-weight:700;margin:6px 0 16px">${esc(text)}</p>
+      <div class="row"><button class="btn ghost" data-action="closeModal">Cancel</button><button class="btn" data-action="confirmYes">Yes</button></div>`, { onYes });
+  }
+  const ANNOUNCE_MS = 5000;
+  function announceQuest(q) {
+    const ok = q.succeeded;
+    showModal(`<div class="announce">
+        <div class="eyebrow">Quest ${q.quest} result</div>
+        <div class="big-result ${ok ? 'good' : 'evil'}">${ok ? 'SUCCESS' : 'FAILED'}</div>
+        <div class="cards-result">${'<div class="qcard success">SUCCESS</div>'.repeat(q.successes)}${'<div class="qcard fail">FAIL</div>'.repeat(q.fails)}</div>
+        <div class="counts">${q.successes} success · ${q.fails} fail${q.failsRequired === 2 ? ' · two fails were needed' : ''}</div>
+        <div class="muted" style="font-size:14px">Team: ${q.teamIds.map(nameOf).map(esc).join(', ')}</div>
+        <div class="timer"><div style="--ms:${ANNOUNCE_MS}ms"></div></div>
+      </div>`, { cls: ok ? 'good' : 'evil', autoCloseMs: ANNOUNCE_MS });
+  }
+  function showRoleModal() {
+    const m = me();
+    if (!m || !m.role) return;
+    showModal(`<div class="role-card ${m.loyalty === 'GOOD' ? 'good' : 'evil'}" style="padding:10px 0 0">${roleCardHtml(m)}</div>
+      <button class="btn secondary" data-action="closeModal" style="margin-top:14px">Hide</button>`, { cls: m.loyalty === 'GOOD' ? 'good' : 'evil' });
+  }
+
   function showOverlay(text) { overlayText.textContent = text; overlayEl.classList.remove('hidden'); }
   function hideOverlay() { overlayEl.classList.add('hidden'); }
 
@@ -649,7 +700,7 @@
     const id = el.getAttribute('data-id');
     switch (action) {
       case 'start': act('start'); break;
-      case 'kick': if (confirm('Remove ' + nameOf(id) + ' from the table?')) act('kick', { playerId: id }); break;
+      case 'kick': confirmDialog('Remove ' + nameOf(id) + ' from the table?', () => act('kick', { playerId: id })); break;
       case 'toggleLady': act('setOptions', { ladyOfTheLake: !s.ladyEnabled }); break;
       case 'toggleRole': ui.roleShown = !ui.roleShown; render(); break;
       case 'confirmRole': ui.roleShown = false; act('confirmRole'); break;
@@ -668,16 +719,20 @@
       case 'ladyExamine': if (ui.pickedLady) act('ladyExamine', { playerId: ui.pickedLady }); break;
       case 'ladyConfirm': act('ladyConfirm'); break;
       case 'pickAssassin': ui.pickedAssassin = ui.pickedAssassin === id ? null : id; render(); break;
-      case 'assassinate': if (ui.pickedAssassin && confirm('Assassinate ' + nameOf(ui.pickedAssassin) + '? This ends the game.')) act('assassinate', { playerId: ui.pickedAssassin }); break;
+      case 'assassinate': if (ui.pickedAssassin) { const t = ui.pickedAssassin; confirmDialog('Assassinate ' + nameOf(t) + '? This ends the game.', () => act('assassinate', { playerId: t })); } break;
       case 'playAgain': act('playAgain'); break;
       case 'openHistory': ui.historyOpen = true; renderHistory(); break;
       case 'allowRejoin': act('allowRejoin', { playerId: id }); break;
-      case 'restart': if (confirm('Abandon this game and send everyone back to the lobby? Roles will be dealt again.')) { closeHistory(); act('restart'); } break;
+      case 'restart': confirmDialog('Abandon this game and send everyone back to the lobby? Roles will be dealt again.', () => { closeHistory(); act('restart'); }); break;
+      case 'closeModal': closeModal(); break;
+      case 'confirmYes': { const fn = modalOnYes; closeModal(); if (fn) fn(); break; }
+      case 'showRole': showRoleModal(); break;
       case 'closeHistory': closeHistory(); break;
       default: break;
     }
   });
   sheetEl.addEventListener('click', (ev) => { if (ev.target === sheetEl) closeHistory(); });
+  modalEl.addEventListener('click', (ev) => { if (ev.target === modalEl) closeModal(); });
   bannerEl.addEventListener('click', () => bannerEl.classList.add('hidden'));
 
   // Expose a tiny hook for automated UI tests (no game data beyond what the player already sees).

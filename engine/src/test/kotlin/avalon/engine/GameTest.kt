@@ -212,7 +212,9 @@ class GameTest {
         val g = started(5)
         g.proposeTeam(g.leader().id, listOf("p0", "p1"))
         g.vote("p0", Vote.APPROVE)
-        assertFailsWith<IllegalActionException> { g.vote("p0", Vote.REJECT) }
+        g.vote("p0", Vote.REJECT) // allowed to change until the vote closes
+        assertEquals(Vote.REJECT, g.viewFor("p0").you.yourVote)
+        g.vote("p0", Vote.APPROVE)
         val v = g.viewFor("p1")
         assertEquals(listOf("p0"), v.votedIds)
         assertTrue(v.voteHistory.isEmpty())
