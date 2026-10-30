@@ -200,10 +200,19 @@ while (guard++ < 400) {
   const phase = states[0].phase;
   if (phase === 'GAME_OVER') break;
   if (states.every((x) => x && x.quests.length > announced)) {
+    if (announced === 1) {
+      // A phone that reloads (or was asleep) before dismissing the announcement must see it again.
+      await pages[4].reload();
+      await waitFor(pages[4], (x) => x && x.quests.length === 2, 'reloaded after quest 2');
+      await pages[4].waitForSelector('#modal', { state: 'visible', timeout: 3000 }).catch(() => fail('no announcement after reload'));
+    }
     // Every tab must show the big quest-result announcement.
     for (const p of pages) {
       const shown = await p.evaluate(() => !document.getElementById('modal').classList.contains('hidden') && /Quest \d result/.test(document.getElementById('modal-body').textContent));
-      if (!shown) fail(`${p.name}: no quest announcement after quest ${states[0].quests.length}`);
+      if (!shown) {
+        const dbg = await p.evaluate(() => ({ announced: localStorage.getItem('avalon.announced'), modal: document.getElementById('modal').className, body: document.getElementById('modal-body').textContent.slice(0, 80), quests: window.__avalon.state.quests.length, phase: window.__avalon.state.phase }));
+        fail(`${p.name}: no quest announcement after quest ${states[0].quests.length} ${JSON.stringify(dbg)}`);
+      }
     }
     await shot(pages[1], `q${states[0].quests.length}-announcement`);
     if (announced === 0) {

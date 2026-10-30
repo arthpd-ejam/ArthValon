@@ -196,7 +196,7 @@
     if (prev && prev.phase !== state.phase && modalOnYes) closeModal(); // a pending confirmation is stale after a phase change
     render();
     if (newEvent && prev) banner(state.lastEvent); // after render, so it sits below the status bar
-    if (prev && state.quests.length > prev.quests.length) announceQuest(state.quests[state.quests.length - 1]);
+    maybeAnnounceQuest(state);
   }
 
   // ------------------------------------------------------------ helpers
@@ -646,23 +646,55 @@
   const modalBody = $('modal-body');
   let modalTimer = null;
   let modalOnYes = null;
+  let modalOnClose = null;
   function showModal(html, opts) {
     opts = opts || {};
     clearTimeout(modalTimer);
+    if (modalOnClose) { const f = modalOnClose; modalOnClose = null; f(); } // replacing an open announcement counts as closing it
     modalOnYes = opts.onYes || null;
+    modalOnClose = opts.onClose || null;
     modalBody.innerHTML = html;
     modalEl.querySelector('.modal-card').className = 'modal-card ' + (opts.cls || '');
     modalEl.classList.remove('hidden');
-    if (opts.autoCloseMs) modalTimer = setTimeout(closeModal, opts.autoCloseMs);
+    modalAutoClose = opts.autoCloseMs || 0;
+    armModalTimer();
   }
-  function closeModal() { clearTimeout(modalTimer); modalOnYes = null; modalEl.classList.add('hidden'); modalBody.innerHTML = ''; }
+  let modalAutoClose = 0;
+  // The countdown only runs while the screen is on, so a sleeping phone shows the dialog when it wakes.
+  function armModalTimer() {
+    clearTimeout(modalTimer);
+    if (modalAutoClose && document.visibilityState === 'visible') modalTimer = setTimeout(closeModal, modalAutoClose);
+  }
+  document.addEventListener('visibilitychange', () => { if (!modalEl.classList.contains('hidden')) armModalTimer(); });
+  function closeModal() {
+    clearTimeout(modalTimer); modalAutoClose = 0; modalOnYes = null;
+    modalEl.classList.add('hidden'); modalBody.innerHTML = '';
+    if (modalOnClose) { const f = modalOnClose; modalOnClose = null; f(); }
+  }
   /** In-page confirmation: the browser's native dialog is silently cancelled inside Android WebViews. */
   function confirmDialog(text, onYes) {
     showModal(`<p style="font-size:19px;font-weight:700;margin:6px 0 16px">${esc(text)}</p>
       <div class="row"><button class="btn ghost" data-action="closeModal">Cancel</button><button class="btn" data-action="confirmYes">Yes</button></div>`, { onYes });
   }
   const ANNOUNCE_MS = 5000;
-  function announceQuest(q) {
+  let announceOpen = false;
+  /**
+   * Show the result of any quest this phone has not announced yet. Remembered in
+   * localStorage so a phone that was asleep, reconnecting or reloaded at the moment
+   * the quest finished still gets the announcement on its next update.
+   */
+  function maybeAnnounceQuest(state) {
+    if (state.phase === 'LOBBY' || state.phase === 'ROLE_REVEAL') { store.set('announced', '0'); return; }
+    const n = state.quests.length;
+    let done = parseInt(store.get('announced') || '0', 10) || 0;
+    if (done > n) done = 0; // a new game started
+    if (n > done && !announceOpen) {
+      announceOpen = true;
+      // Only count it as seen once the dialog closes (x, tap outside, or the timer while the screen is on).
+      announceQuest(state.quests[n - 1], () => { announceOpen = false; store.set('announced', String(n)); });
+    }
+  }
+  function announceQuest(q, onClose) {
     const ok = q.succeeded;
     showModal(`<div class="announce">
         <div class="eyebrow">Quest ${q.quest} result</div>
@@ -671,7 +703,7 @@
         <div class="counts">${q.successes} success · ${q.fails} fail${q.failsRequired === 2 ? ' · two fails were needed' : ''}</div>
         <div class="muted" style="font-size:14px">Team: ${q.teamIds.map(nameOf).map(esc).join(', ')}</div>
         <div class="timer"><div style="--ms:${ANNOUNCE_MS}ms"></div></div>
-      </div>`, { cls: ok ? 'good' : 'evil', autoCloseMs: ANNOUNCE_MS });
+      </div>`, { cls: ok ? 'good' : 'evil', autoCloseMs: ANNOUNCE_MS, onClose });
   }
   function showRoleModal() {
     const m = me();
