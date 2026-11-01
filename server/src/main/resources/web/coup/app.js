@@ -188,7 +188,9 @@
     opts = opts || {};
     const info = CARDS[c] || { name: c, glyph: '?', ability: '' };
     const cls = `ccard ${esc(c)}${opts.lost ? ' lost' : ''}${opts.selected ? ' selected' : ''}`;
-    const inner = `<span class="glyph">${info.glyph}</span><span class="cname">${esc(info.name)}</span>${opts.noAbility ? '' : `<span class="ability">${esc(info.ability)}</span>`}`;
+    // Card art lives in img/<character>.jpg (bundled); the emoji shows only if a picture fails to load.
+    const art = `<img class="cimg" src="img/${esc(String(c).toLowerCase())}.jpg" alt="" onerror="this.outerHTML='<span class=&quot;glyph&quot;>${info.glyph}</span>'">`;
+    const inner = `${art}<span class="cname">${esc(info.name)}</span>${opts.noAbility ? '' : `<span class="ability">${esc(info.ability)}</span>`}`;
     if (opts.action) return `<button class="${cls}" data-action="${opts.action}" data-index="${opts.index}">${inner}</button>`;
     return `<div class="${cls}">${inner}</div>`;
   }

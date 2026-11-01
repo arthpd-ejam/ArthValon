@@ -93,7 +93,8 @@ async function playGame(players, label) {
   let steps = 0;
   let dropped = false;
   while (true) {
-    if (++steps > 3000) throw new Error(`${label}: game did not finish`);
+    if (++steps > 600) throw new Error(`${label}: game did not finish`);
+    if (steps % 25 === 0) console.log(`  ${label} step ${steps}`);
     const states = await Promise.all(players.map(state));
     if (states.every((s) => s && s.phase === 'GAME_OVER')) return states[0];
     let acted = false;
@@ -161,6 +162,7 @@ async function playGame(players, label) {
       } catch (e) {
         // State moved on between reading it and tapping (another phone acted first): just retry.
         if (!/Timeout|timed out|not attached|detached/i.test(String(e))) throw e;
+        console.log(`  retry ${page.name} ${m.pending}: ${String(e).split('\n')[0].slice(0, 160)}`);
       }
       if (acted) break; // re-read everyone's state after each tap
     }

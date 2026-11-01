@@ -51,6 +51,7 @@ jobs:
           if-no-files-found: error
 
       - name: Coup browser test (plays full games through the real UI)
+        timeout-minutes: 12
         run: |
           npm install -g playwright@1.48.2
           npx --yes playwright@1.48.2 install --with-deps chromium
