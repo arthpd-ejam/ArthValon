@@ -34,6 +34,11 @@ data class JoinedMessage(val playerId: String, val token: String) : ServerMessag
 @kotlinx.serialization.SerialName("state")
 data class StateMessage(val state: PlayerView, val server: ServerInfo) : ServerMessage()
 
+/** Coup: the player's filtered view of the Coup table (sent on /coup/ws). */
+@Serializable
+@kotlinx.serialization.SerialName("coupState")
+data class CoupStateMessage(val state: coup.engine.CoupView, val server: ServerInfo) : ServerMessage()
+
 /** Non-game information the client needs. */
 @Serializable
 data class ServerInfo(

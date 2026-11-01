@@ -2,15 +2,19 @@
 <resources>
     <string name="app_name">ArthValon</string>
     <string name="title">ArthValon — Host</string>
+    <string name="pick_game">Game for tonight</string>
+    <string name="game_avalon">Avalon</string>
+    <string name="game_coup">Coup</string>
     <string name="starting">Starting server…</string>
     <string name="hotspot_hint">No hotspot found.\n\nTurn on your Wi-Fi hotspot (Settings → Network &amp; internet → Hotspot &amp; tethering), then come back here. Friends connect to your hotspot and scan the code.</string>
-    <string name="friends_scan">Friends: join my hotspot Wi-Fi, then scan this or type the address</string>
+    <string name="friends_scan">Friends: join my hotspot Wi-Fi, then scan this or type the address to play %1$s</string>
     <string name="open_player">Open my player screen</string>
+    <string name="open_player_game">Open my %1$s screen</string>
     <string name="open_in_browser">Open in Chrome instead</string>
     <string name="hotspot_settings">Hotspot settings</string>
     <string name="stop">Stop hosting</string>
     <string name="notification_channel">Avalon host server</string>
     <string name="notification_title">ArthValon is hosting</string>
-    <string name="notification_text">Friends can join at %1$s</string>
+    <string name="notification_text">%2$s: friends can join at %1$s</string>
     <string name="server_running">Server running on port %1$d · keep this phone on</string>
 </resources>

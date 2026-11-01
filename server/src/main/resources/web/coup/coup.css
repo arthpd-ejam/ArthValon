@@ -1,0 +1,110 @@
+/* Coup additions on top of ../style.css (shared look with Avalon). */
+:root {
+  --duke: #9b6ae0;
+  --assassin: #7d8394;
+  --captain: #3f93e0;
+  --ambassador: #43b874;
+  --contessa: #e05a5a;
+  --coin: #f2c94c;
+}
+
+/* ---------- character cards ---------- */
+.hand { display: flex; gap: 12px; justify-content: center; }
+.ccard {
+  position: relative; flex: 1; max-width: 170px; min-height: 190px;
+  border-radius: 16px; padding: 14px 10px 12px; text-align: center;
+  border: 3px solid var(--c, var(--line)); background: linear-gradient(170deg, rgba(255, 255, 255, .06), rgba(0, 0, 0, .25)), var(--card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: var(--text); font: inherit; cursor: default;
+}
+.ccard .glyph { font-size: 50px; line-height: 1; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
+.ccard .cname { font-size: 21px; font-weight: 900; color: var(--c); letter-spacing: .02em; }
+.ccard .ability { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.ccard.DUKE { --c: var(--duke); }
+.ccard.ASSASSIN { --c: var(--assassin); }
+.ccard.CAPTAIN { --c: var(--captain); }
+.ccard.AMBASSADOR { --c: var(--ambassador); }
+.ccard.CONTESSA { --c: var(--contessa); }
+.ccard.lost { opacity: .4; filter: grayscale(.8); }
+.ccard.lost::after {
+  content: "LOST"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+  font-weight: 900; font-size: 26px; color: var(--evil); border: 3px solid var(--evil); padding: 2px 10px; border-radius: 8px;
+  background: rgba(0, 0, 0, .55);
+}
+.ccard.back { --c: var(--gold); background: repeating-linear-gradient(135deg, var(--card) 0 12px, var(--card2) 12px 24px); }
+button.ccard { cursor: pointer; }
+button.ccard:active { transform: scale(.98); }
+.ccard.selected { box-shadow: 0 0 0 4px var(--gold); }
+.ccard.selected::before {
+  content: "✓ KEEP"; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: #2a1d05; font-weight: 900; font-size: 12px; border-radius: 999px; padding: 2px 8px;
+}
+.hand.small .ccard { min-height: 120px; padding: 8px 6px; }
+.hand.small .ccard .glyph { font-size: 32px; }
+.hand.small .ccard .cname { font-size: 16px; }
+.hand.wrap { flex-wrap: wrap; }
+.hand.wrap .ccard { flex: 0 0 calc(50% - 6px); }
+
+/* inline mini card chips (players list, log) */
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 13px; font-weight: 800; border: 1px solid var(--c, var(--line)); color: var(--c, var(--muted)); background: rgba(0, 0, 0, .25); white-space: nowrap; }
+.chip.DUKE { --c: var(--duke); }
+.chip.ASSASSIN { --c: var(--assassin); }
+.chip.CAPTAIN { --c: var(--captain); }
+.chip.AMBASSADOR { --c: var(--ambassador); }
+.chip.CONTESSA { --c: var(--contessa); }
+.chip.lost { text-decoration: line-through; opacity: .7; }
+.backs { display: inline-flex; gap: 3px; }
+.backs i { display: inline-block; width: 14px; height: 20px; border-radius: 3px; border: 2px solid var(--gold); background: repeating-linear-gradient(135deg, var(--card) 0 3px, var(--card2) 3px 6px); }
+
+/* ---------- table of players ---------- */
+.seat-list { list-style: none; margin: 0; padding: 0; }
+.seat-list li { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--line); min-height: 60px; }
+.seat-list li:last-child { border-bottom: 0; }
+.seat-list li.turn { background: rgba(232, 193, 112, .08); border-radius: 12px; }
+.seat-list li.dead { opacity: .5; }
+.seat-list .who { flex: 1; min-width: 0; }
+.seat-list .who .n { font-weight: 700; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.seat-list .who .sub { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 3px; }
+.coins { display: inline-flex; align-items: center; gap: 4px; font-weight: 900; font-size: 18px; color: var(--coin); white-space: nowrap; }
+.coins::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--coin); box-shadow: inset 0 0 0 3px #b08a1e; }
+.faction { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; }
+.faction.LOYALIST { background: #3b2f12; color: var(--gold); border: 1px solid var(--gold); }
+.faction.REFORMIST { background: #1c2d3f; color: #7cc4ff; border: 1px solid #7cc4ff; }
+
+/* ---------- actions ---------- */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.abtn {
+  min-height: 78px; border-radius: 16px; border: 2px solid var(--c, var(--line)); background: var(--card);
+  color: var(--text); text-align: left; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  font: inherit;
+}
+.abtn .t { font-weight: 900; font-size: 18px; color: var(--c, var(--text)); }
+.abtn .d { font-size: 13px; color: var(--muted); line-height: 1.25; }
+.abtn.selected { background: #3a3020; box-shadow: 0 0 0 3px var(--gold); }
+.abtn:disabled { opacity: .35; cursor: not-allowed; }
+.abtn.wide { grid-column: span 2; }
+.abtn.DUKE { --c: var(--duke); }
+.abtn.ASSASSIN { --c: var(--assassin); }
+.abtn.CAPTAIN { --c: var(--captain); }
+.abtn.AMBASSADOR { --c: var(--ambassador); }
+.abtn.COUP { --c: var(--evil); }
+.abtn.GOLD { --c: var(--gold); }
+
+.claim-box { text-align: center; }
+.claim-box .big { font-size: 22px; font-weight: 800; margin: 4px 0 8px; }
+.claim-box .chip { font-size: 15px; padding: 5px 12px; }
+.waiting { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+.waiting .tag { font-size: 13px; text-transform: none; letter-spacing: 0; }
+
+.log { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.log li { padding: 7px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.log li:last-child { color: var(--text); border-bottom: 0; }
+
+.status .coins { font-size: 16px; }
+.mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-pick button { min-height: 76px; border-radius: 16px; border: 2px solid var(--line); background: var(--card); color: var(--text); font: inherit; text-align: left; padding: 10px 12px; cursor: pointer; }
+.mode-pick button .t { font-weight: 900; font-size: 18px; display: block; }
+.mode-pick button .d { font-size: 13px; color: var(--muted); }
+.mode-pick button.on { border-color: var(--gold); background: #3a3020; }
+.mode-pick button.on .t { color: var(--gold); }
+.winner-cards { display: flex; gap: 6px; flex-wrap: wrap; }

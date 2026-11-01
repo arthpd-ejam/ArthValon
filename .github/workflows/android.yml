@@ -26,6 +26,16 @@ jobs:
       - name: Run engine and server tests (unit, simulation, leak, offline checks)
         run: ./gradlew :engine:test :server:test --no-daemon --stacktrace
 
+      - name: Build the runnable server jar (for PC testing)
+        run: ./gradlew :server:fatJar --no-daemon --stacktrace
+
+      - name: Upload server jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-jar
+          path: server/build/libs/server-all.jar
+          if-no-files-found: error
+
       - name: Build debug APK
         # The Android SDK is preinstalled on the GitHub runner (ANDROID_HOME), which makes
         # settings.gradle.kts include the :app module.

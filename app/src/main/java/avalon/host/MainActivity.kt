@@ -21,6 +21,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import avalon.server.AvalonServer
+import avalon.server.GameKind
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -36,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hotspotSettings: Button
     private lateinit var openPlayer: Button
     private lateinit var openBrowser: Button
+    private lateinit var gamePicker: MaterialButtonToggleGroup
 
     private val handler = Handler(Looper.getMainLooper())
     private var lastUrl: String? = null
@@ -58,14 +61,23 @@ class MainActivity : AppCompatActivity() {
         hotspotSettings = findViewById(R.id.hotspotSettings)
         openPlayer = findViewById(R.id.openPlayer)
         openBrowser = findViewById(R.id.openBrowser)
+        gamePicker = findViewById(R.id.gamePicker)
+
+        gamePicker.check(if (HostService.selectedGame(this) == GameKind.COUP) R.id.pickCoup else R.id.pickAvalon)
+        gamePicker.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            HostService.setSelectedGame(this, if (checkedId == R.id.pickCoup) GameKind.COUP else GameKind.AVALON)
+            lastUrl = null // redraw the QR code for the new game
+            update()
+        }
 
         hotspotSettings.setOnClickListener { openHotspotSettings() }
         openPlayer.setOnClickListener {
-            HostService.server?.let { startActivity(Intent(this, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_URL, it.hostUrl())) }
+            HostService.server?.let { startActivity(Intent(this, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_URL, it.hostUrl(game = game()))) }
         }
         openBrowser.setOnClickListener {
             HostService.server?.let {
-                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.hostUrl()))) }
+                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.hostUrl(game = game())))) }
                 catch (e: Exception) { Toast.makeText(this, "No browser found", Toast.LENGTH_SHORT).show() }
             }
         }
@@ -92,7 +104,10 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacks(refresh)
     }
 
+    private fun game(): GameKind = HostService.selectedGame(this)
+
     private fun update() {
+        openPlayer.text = getString(R.string.open_player_game, game().displayName)
         val server = HostService.server
         if (server == null) {
             status.text = HostService.lastError?.let { "Could not start the server: $it" } ?: getString(R.string.starting)
@@ -114,9 +129,10 @@ class MainActivity : AppCompatActivity() {
             lastUrl = null
             return
         }
-        val joinUrl = server.joinUrlFor(best.second)!!
+        server.selectedGame = game()
+        val joinUrl = server.joinUrlFor(best.second, game())!!
         hotspotSettings.visibility = View.GONE
-        hint.text = getString(R.string.friends_scan) +
+        hint.text = getString(R.string.friends_scan, game().displayName) +
             if (addresses.size > 1) "\n\nOther addresses on this phone: " + addresses.drop(1).joinToString { it.second } else ""
         if (joinUrl != lastUrl) {
             lastUrl = joinUrl
