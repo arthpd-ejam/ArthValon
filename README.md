@@ -1,6 +1,7 @@
-# Avalon Offline
+# ArthValon: Avalon + Coup Offline
 
-A private, fully offline version of *The Resistance: Avalon* for a group of friends.
+A private, fully offline version of *The Resistance: Avalon* and *Coup* for a group of friends.
+Both games run from the same host app over the same hotspot. Pick the game on the host screen.
 
 * One Android phone is the **host**. It turns on its Wi-Fi hotspot and runs the host app.
 * Everyone else connects to that hotspot and plays in their phone's **browser** (Android or iPhone). Nothing to install.
@@ -60,6 +61,25 @@ The app ships with its own drawn role cards. If you'd rather see the card art yo
 
 If a `.png` is missing the drawn `.svg` card is shown instead. (The official artwork is copyrighted by its publisher, which is why it is not included in this repository; using photos of cards you own for a private game among friends is up to you.)
 
+## 2c. Playing Coup
+
+1. On the host screen, tap **Coup** under *Game for tonight*. The QR code and address switch to the Coup table (`http://192.168.43.1:8080/coup/`). The bare address also opens Coup now, so friends who type it by hand land in the right game.
+2. Tap **Open my Coup screen** to take your own seat, exactly like Avalon.
+3. In the lobby the host picks the version:
+   * **Classic**: 2–6 players, 15 cards (3 each of Duke, Assassin, Captain, Ambassador, Contessa).
+   * **Reformation**: 2–10 players, Loyalists vs Reformists and the Treasury Reserve. 7–8 players use 4 of each card, 9–10 use 5 of each.
+4. There is no timer: an action (or a block) only goes through when **every** player who can answer has tapped *Allow*, *Challenge* or *Block*. If someone's phone died, the host opens **Table & log** and taps **Skip players who aren't answering** (missing answers count as Allow; a stuck card choice is made at random; a stuck turn takes Income).
+5. Each phone shows only its own cards (tap **Hide my cards** if people sit close). The Exchange draw is only shown to the player exchanging. All cards are shown at the end.
+
+Coup rules implemented:
+
+* Income +1, Foreign Aid +2 (any Duke may block), Coup (pay 7, can't be stopped, forced at 10+ coins).
+* Duke: Tax +3. Assassin: pay 3 to assassinate (Contessa blocks). Captain: steal 2 (Captain or Ambassador blocks). Ambassador: exchange with the Court deck.
+* Any claim can be challenged; the loser of a challenge picks which card to reveal. A proven card is shuffled back and replaced. If an Assassin bluff is caught, the 3 coins come back; if the assassination is blocked, they stay spent.
+* A target who loses a challenge against the Assassin may still block with the Contessa (and can lose both cards if that block is a bluff that gets challenged).
+* Two-player Classic: the starting player begins with 1 coin.
+* Reformation: you can't Coup, Assassinate, Steal from or block the Foreign Aid of your own side until everyone is on one side. **Convert** costs 1 (yourself) or 2 (someone else), paid to the Treasury Reserve. **Embezzle** takes the Reserve by claiming you have no Duke; if challenged and you had no Duke, your cards are reshuffled and replaced and the challenger loses a card. The start player's allegiance is random, then sides alternate around the table.
+
 ## 3. How the game works (rules implemented)
 
 | Players | Good | Evil | Quest team sizes |
@@ -115,8 +135,8 @@ Windows Firewall will ask whether to allow Java to accept connections: allow it 
 ## 5. For developers
 
 ```
-engine/   pure Kotlin game engine (rules, validation, per-player views) + unit tests
-server/   Ktor HTTP + WebSocket server, bundled web UI (server/src/main/resources/web) + simulation and leak tests
+engine/   pure Kotlin game engines: avalon.engine and coup.engine (rules, validation, per-player views) + unit tests
+server/   Ktor HTTP + WebSocket server: Avalon on / and /ws, Coup on /coup/ and /coup/ws; bundled web UI (server/src/main/resources/web, web/coup) + simulation and leak tests
 app/      Android host app (foreground service, hotspot IP detection, QR code, WebView player screen)
 tools/    headless-browser UI test and screenshot generator
 docs/     screenshots of every screen (docs/screenshots)

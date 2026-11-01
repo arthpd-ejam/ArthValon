@@ -10,6 +10,8 @@ jobs:
     name: Test and build debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -47,6 +49,22 @@ jobs:
           name: avalon-offline-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Coup browser test (plays full games through the real UI)
+        run: |
+          npm install -g playwright@1.48.2
+          npx --yes playwright@1.48.2 install --with-deps chromium
+          NODE_PATH=$(npm root -g) node tools/coup-ui-test.mjs
+
+      - name: Save Coup screenshots to the branch
+        if: always() && github.event_name == 'push' && startsWith(github.ref_name, 'claude/')
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add docs/screenshots/coup || exit 0
+          git diff --cached --quiet && exit 0
+          git commit -m "Update Coup screenshots [skip ci]"
+          git push || echo "screenshot push skipped (branch moved)"
 
       - name: Upload test reports
         if: always()

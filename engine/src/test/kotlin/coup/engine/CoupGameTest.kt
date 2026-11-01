@@ -39,7 +39,9 @@ class CoupGameTest {
 
     private fun CoupGame.p(id: String) = player(id)
 
-    private fun totalCards(g: CoupGame) = g.secretDeck.size + g.players.sumOf { it.cards.size }
+    /** Deck + hands (+ the two cards an Ambassador is holding mid-exchange). */
+    private fun totalCards(g: CoupGame) =
+        g.secretDeck.size + g.players.sumOf { it.cards.size } + if (g.phase == CoupPhase.EXCHANGE) 2 else 0
 
     @Test
     fun `setup deals two cards and two coins and uses the right deck`() {
