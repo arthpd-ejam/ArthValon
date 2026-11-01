@@ -105,7 +105,7 @@ class CoupBot(
             CoupPending.TAKE_ACTION -> {
                 val o = me.actions.filter { it.allowed }.random(random)
                 val target = if (o.type.needsTarget) o.targets.random(random) else null
-                action("declare") { put("type", o.type.name); if (target != null) put("targetId", target) }
+                action("declare") { put("actionType", o.type.name); if (target != null) put("targetId", target) }
                 true
             }
             CoupPending.RESPOND -> {
@@ -159,7 +159,7 @@ class CoupServerTest {
                 if (g == 0) host.action("start") else host.action("playAgain")
                 await { bots.all { it.view?.phase == CoupPhase.ACTION } }
                 var dropped = false
-                withTimeout(60_000) {
+                try { withTimeout(60_000) {
                     while (!bots.all { it.view?.phase == CoupPhase.GAME_OVER }) {
                         bots.forEach { it.act() }
                         // Somebody's phone sleeps for a moment mid-game and comes back to the same seat.
@@ -170,6 +170,11 @@ class CoupServerTest {
                         }
                         delay(3)
                     }
+                } } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                    throw AssertionError("game stalled: " + bots.joinToString(" | ") { b ->
+                        val v = b.view
+                        "${b.name} v${v?.version} ${v?.phase} ${v?.you?.pending} errors=${b.errors.takeLast(3)}"
+                    } + " log=" + bots[0].view?.log?.takeLast(5))
                 }
                 val winners = bots.map { it.view!!.winnerId }.toSet()
                 assertEquals(1, winners.size)

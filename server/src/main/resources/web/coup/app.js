@@ -601,7 +601,7 @@
       case 'declare': {
         const a = ui.chosenAction;
         if (!a) break;
-        const extra = { type: a };
+        const extra = { actionType: a };
         if (ui.chosenTarget) extra.targetId = ui.chosenTarget;
         if (a === 'COUP' || a === 'ASSASSINATE') {
           const t = ui.chosenTarget;

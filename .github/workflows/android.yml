@@ -64,7 +64,7 @@ jobs:
           git add docs/screenshots/coup || exit 0
           git diff --cached --quiet && exit 0
           git commit -m "Update Coup screenshots [skip ci]"
-          git push || echo "screenshot push skipped (branch moved)"
+          git push origin "HEAD:${{ github.ref_name }}" || echo "screenshot push skipped (branch moved)"
 
       - name: Upload test reports
         if: always()

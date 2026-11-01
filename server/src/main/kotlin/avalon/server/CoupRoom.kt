@@ -141,7 +141,7 @@ class CoupRoom(
                         if (target.connected) throw CoupIllegalAction("${target.name} is still connected")
                         rejoinable.add(target.id)
                     }
-                    "declare" -> game.declare(pid, enumArg<ActionType>(obj, "type"), obj.str("targetId"))
+                    "declare" -> game.declare(pid, enumArg<ActionType>(obj, "actionType"), obj.str("targetId"))
                     "pass" -> game.pass(pid)
                     "challenge" -> game.challenge(pid)
                     "block" -> game.block(pid, enumArg<CoupCard>(obj, "card"))
