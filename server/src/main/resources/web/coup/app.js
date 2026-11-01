@@ -555,7 +555,12 @@
   }
   let winnerShownFor = null;
   function maybeAnnounceWinner(s) {
-    if (s.phase !== 'GAME_OVER') { winnerShownFor = null; return; }
+    if (s.phase !== 'GAME_OVER') {
+      // A new game (or the lobby) makes the old winner announcement stale: don't leave it covering the screen.
+      if (winnerShownFor !== null && !modalEl.classList.contains('hidden') && !modalOnYes) closeModal();
+      winnerShownFor = null;
+      return;
+    }
     if (winnerShownFor === s.version || winnerShownFor !== null) return;
     winnerShownFor = s.version;
     const w = byId(s.winnerId);
