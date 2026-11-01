@@ -451,7 +451,7 @@
     const cards = m.cards.map((c, i) => c.revealed ? cardHtml(c.character, { lost: true }) : cardHtml(c.character, { action: 'loseCard', index: i })).join('');
     return `
       <div class="hero"><div class="eyebrow">You lose a card</div><h1>Pick a card to reveal</h1>
-        <p>You ${esc(s.pending && s.pending.lossReason ? s.pending.lossReason : 'lost influence')}. The card you tap is turned face up for good.</p></div>
+        <p>You ${esc(String(s.pending && s.pending.lossReason ? s.pending.lossReason : 'lost influence').replace(/^was /, 'were '))}. The card you tap is turned face up for good.</p></div>
       <div class="card"><div class="hand">${cards}</div></div>`;
   }
 
