@@ -58,6 +58,7 @@ class LeakChecker(private val game: Game) {
                 when {
                     v in roleNames -> {
                         val ok = path == "state.you.role" && v == myRole.name ||
+                            path.matches(Regex("""state\.rolesInPlay\[\d+]""")) || // the deck is public
                             gameOver && path.startsWith("state.gameOver.roles.")
                         if (!ok) bad("role '$v' at $path")
                     }
@@ -81,11 +82,14 @@ class LeakChecker(private val game: Game) {
             val mm = you.ids("merlinOrMorgana")
             val teammates = you.ids("evilTeammates")
             if (inGame) {
+                val mordred = game.players.firstOrNull { it.role == Role.MORDRED }?.id
+                val oberon = game.players.firstOrNull { it.role == Role.OBERON }?.id
                 when (myRole) {
-                    Role.MERLIN -> if (knownEvil != evil) bad("Merlin knownEvil=$knownEvil expected $evil")
+                    Role.MERLIN -> if (knownEvil != evil - setOfNotNull(mordred)) bad("Merlin knownEvil=$knownEvil expected ${evil - setOfNotNull(mordred)}")
                     Role.PERCIVAL -> if (mm != merlinMorgana) bad("Percival merlinOrMorgana=$mm expected $merlinMorgana")
                     Role.LOYAL_SERVANT -> {}
-                    else -> if (teammates != evil - playerId) bad("evilTeammates=$teammates expected ${evil - playerId}")
+                    Role.OBERON -> if (teammates.isNotEmpty()) bad("Oberon must not know the other evil")
+                    else -> if (teammates != evil - playerId - setOfNotNull(oberon)) bad("evilTeammates=$teammates expected ${evil - playerId - setOfNotNull(oberon)}")
                 }
                 if (myRole != Role.MERLIN && knownEvil.isNotEmpty()) bad("non-Merlin received knownEvil")
                 if (myRole != Role.PERCIVAL && mm.isNotEmpty()) bad("non-Percival received merlinOrMorgana")

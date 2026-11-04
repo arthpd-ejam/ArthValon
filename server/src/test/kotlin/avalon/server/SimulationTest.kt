@@ -25,7 +25,7 @@ class SimulationTest {
 
     private data class Outcome(val winner: Winner, val quests: Int, val lady: Int)
 
-    private fun playGame(n: Int, seed: Int, ladyOverride: Boolean? = null, chaos: Boolean = true): Outcome = runBlocking {
+    private fun playGame(n: Int, seed: Int, ladyOverride: Boolean? = null, chaos: Boolean = true, extraRoles: Boolean = false): Outcome = runBlocking {
         val random = Random(seed)
         val server = AvalonServer(port = 0, joinAddress = { "127.0.0.1" })
         server.start()
@@ -39,6 +39,10 @@ class SimulationTest {
             withTimeout(10_000) { while (bots.any { it.view?.players?.size != n }) delay(10) }
             if (ladyOverride != null) {
                 bots[0].action("setOptions") { put("ladyOfTheLake", ladyOverride) }
+            }
+            if (extraRoles) {
+                bots[0].action("setOptions") { put("mordred", true); put("oberon", n >= 10); if (n < 7) { put("morgana", false) } }
+                withTimeout(5_000) { while (server.room.game.options.mordred != true) delay(10) }
             }
             // The host bot starts the game.
             val diag = {
@@ -97,6 +101,11 @@ class SimulationTest {
             if (n >= 7) assertTrue(outcomes.any { it.lady > 0 }, "Lady of the Lake should happen at n=$n")
         }
         println("Simulation outcomes: " + stats.map { (n, o) -> "$n players: good=${o.count { it.winner == Winner.GOOD }} evil=${o.count { it.winner == Winner.EVIL }}" })
+    }
+
+    @Test
+    fun `games with Mordred and Oberon finish and leak nothing`() {
+        for (n in listOf(5, 7, 8, 10)) repeat(3) { i -> playGame(n, seed = 7000 + n * 10 + i, extraRoles = true) }
     }
 
     @Test

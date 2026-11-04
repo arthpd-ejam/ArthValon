@@ -107,6 +107,7 @@ class Game(private val random: Random = Random.Default) {
     fun setOptions(hostId: String, newOptions: GameOptions) {
         requireHost(hostId)
         requirePhase(Phase.LOBBY, "Options can only be changed in the lobby")
+        if (seats.size in 5..10) Setup.validate(seats.size, newOptions)
         options = newOptions
         bump()
     }
@@ -144,7 +145,7 @@ class Game(private val random: Random = Random.Default) {
     private fun beginGame() {
         val n = seats.size
         setup = Setup.forPlayers(n)
-        val roles = Setup.roles(n).shuffled(random)
+        val roles = Setup.roles(n, options).shuffled(random)
         seats.forEachIndexed { i, p -> p.role = roles[i] }
 
         questIndex = 0
@@ -360,12 +361,15 @@ class Game(private val random: Random = Random.Default) {
         val role = me.role.takeIf { inGame }
         val s = setup
 
-        val knownEvil = if (inGame && role == Role.MERLIN) seats.filter { !it.role!!.good }.map { it.id } else emptyList()
+        // Merlin sees every evil player except Mordred.
+        val knownEvil = if (inGame && role == Role.MERLIN) seats.filter { !it.role!!.good && it.role != Role.MORDRED }.map { it.id } else emptyList()
+        // Percival sees Merlin and Morgana (one name only if Morgana is not in play).
         val merlinOrMorgana = if (inGame && role == Role.PERCIVAL)
             seats.filter { it.role == Role.MERLIN || it.role == Role.MORGANA }.map { it.id }.shuffled(random)
         else emptyList()
-        val evilTeammates = if (inGame && role != null && !role.good)
-            seats.filter { !it.role!!.good && it.id != me.id }.map { it.id } else emptyList()
+        // Evil players know each other, except that Oberon is unknown to them and knows nobody.
+        val evilTeammates = if (inGame && role != null && !role.good && role != Role.OBERON)
+            seats.filter { !it.role!!.good && it.role != Role.OBERON && it.id != me.id }.map { it.id } else emptyList()
 
         val pending = pendingActionFor(me)
         val yourLady = if (inGame) ladyHistory.filter { it.holderId == me.id }
@@ -414,6 +418,7 @@ class Game(private val random: Random = Random.Default) {
             playedIds = if (phase == Phase.QUEST) questCards.keys.toList() else emptyList(),
             readyIds = if (phase == Phase.ROLE_REVEAL) ready.toList() else emptyList(),
             options = options,
+            rolesInPlay = if (seats.size in 5..10) runCatching { Setup.roles(seats.size, options).sorted() }.getOrDefault(emptyList()) else emptyList(),
             gameOver = over,
             lastEvent = lastEvent,
             version = version,

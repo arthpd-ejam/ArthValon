@@ -240,6 +240,12 @@
     ASSASSIN: { name: 'Assassin', img: 'assassin', loyalty: 'EVIL',
       text: 'The blade in the dark. If good wins three quests, you get one shot at Merlin.',
       tips: ['Watch who quietly steers the good players: that is probably Merlin.', 'Fail quests when you are on them, and make votes fail five times if you can.', 'At the end, discuss with your team and name Merlin to win.'] },
+    MORDRED: { name: 'Mordred', img: 'mordred', loyalty: 'EVIL',
+      text: 'The dark lord. Merlin cannot see you.',
+      tips: ['Merlin does not know you are evil: use that to earn the trust of the good players.', 'Get onto quests and fail them, or make the table reject five teams in a row.', 'Help the Assassin work out who Merlin is.'] },
+    OBERON: { name: 'Oberon', img: 'oberon', loyalty: 'EVIL',
+      text: 'The lone agent. You do not know the other evil players, and they do not know you. Merlin sees you.',
+      tips: ['Work out who your evil teammates are from the votes and failed quests.', 'Get onto quests and play Fail.', 'Be careful: a quest with two evil players can fail with two cards and expose you both.'] },
     MINION: { name: 'Minion of Mordred', img: 'minion', loyalty: 'EVIL',
       text: 'A servant of darkness. You know your fellow evil players.',
       tips: ['Get picked for quests and play Fail (one is usually enough).', 'Reject teams full of good players; approve teams that include evil.', 'Help identify Merlin for the Assassin at the end.'] },
@@ -251,8 +257,9 @@
     const good = m.loyalty === 'GOOD';
     let knowledge = '';
     if (m.role === 'MERLIN') knowledge = `<div class="know"><h3>These players are evil</h3>${nameTags(m.knownEvil)}</div>`;
-    else if (m.role === 'PERCIVAL') knowledge = `<div class="know"><h3>Merlin and Morgana (in some order)</h3>${nameTags(m.merlinOrMorgana)}</div>`;
-    else if (!good) knowledge = `<div class="know"><h3>Your fellow evil players</h3>${m.evilTeammates.length ? nameTags(m.evilTeammates) : '<span class="muted">none</span>'}</div>`;
+    else if (m.role === 'PERCIVAL') knowledge = `<div class="know"><h3>${m.merlinOrMorgana.length > 1 ? 'Merlin and Morgana (in some order)' : 'Merlin'}</h3>${nameTags(m.merlinOrMorgana)}</div>`;
+    else if (m.role === 'OBERON') knowledge = `<div class="know"><h3>What you know</h3><span class="muted">Nothing. The other evil players do not know you either.</span></div>`;
+    else if (!good) knowledge = `<div class="know"><h3>Your fellow evil players</h3>${m.evilTeammates.length ? nameTags(m.evilTeammates) : '<span class="muted">none</span>'}${(ui.state && ui.state.rolesInPlay.includes('OBERON')) ? '<div class="muted" style="font-size:13px;margin-top:6px">Oberon is in play and is not shown here.</div>' : ''}</div>`;
     else knowledge = `<div class="know"><h3>What you know</h3><span class="muted">Only your own loyalty.</span></div>`;
     return `${info.img ? roleImage(info) : ''}
       <div class="loyalty">${good ? 'Good' : 'Evil'}</div>
@@ -365,7 +372,16 @@
       </div>
       ${m.isHost && joinUrl ? `<div class="card flat center"><h3>Friends open this address</h3><div class="linkbox">${esc(joinUrl)}</div><p class="muted" style="margin:8px 0 0;font-size:14px">They must be on your hotspot Wi-Fi.</p></div>` : ''}
       <div class="card"><ul class="list">${list}</ul></div>
+      ${rolesInPlayHtml(s)}
       ${m.isHost ? `
+        <div class="card">
+          <h3>Characters</h3>
+          ${charToggle(s, 'percival', 'Percival', 'Good. Sees Merlin and Morgana.')}
+          ${charToggle(s, 'morgana', 'Morgana', 'Evil. Looks like Merlin to Percival.')}
+          ${charToggle(s, 'mordred', 'Mordred', 'Evil. Hidden from Merlin.')}
+          ${charToggle(s, 'oberon', 'Oberon', 'Evil. Unknown to the other evil players.')}
+          <p class="muted" style="font-size:13px;margin:6px 0 0">Merlin and the Assassin are always in. Evil seats: ${evilSeats(n)} at ${n} players, so the Assassin plus up to ${Math.max(0, evilSeats(n) - 1)} of Morgana, Mordred and Oberon.</p>
+        </div>
         <div class="card">
           <div class="toggle" data-action="toggleLady" role="switch" aria-checked="${ladyOn}">
             <div><div style="font-weight:700">Lady of the Lake</div><div class="muted" style="font-size:14px">${ladyDefault ? 'On by default at 7+ players' : 'Optional at 5–6 players'}</div></div>
@@ -374,6 +390,25 @@
         </div>
         <div class="actions"><button class="btn big" data-action="start" ${canStart ? '' : 'disabled'}>Start game</button></div>`
         : `<p class="center muted pulse">Waiting for the host to start…</p>`}`;
+  }
+
+  const EVIL_SEATS = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
+  function evilSeats(n) { return EVIL_SEATS[n] || (n >= 10 ? 4 : 2); }
+  function charToggle(s, key, title, text) {
+    const on = !!s.options[key];
+    return `<div class="toggle" data-action="toggleChar" data-key="${key}" role="switch" aria-checked="${on}">
+      <div><div style="font-weight:700">${title}</div><div class="muted" style="font-size:14px">${text}</div></div>
+      <span class="switch ${on ? 'on' : ''}"></span></div>`;
+  }
+  function rolesInPlayHtml(s) {
+    if (!s.rolesInPlay || !s.rolesInPlay.length) return '';
+    const counts = {};
+    s.rolesInPlay.forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+    const order = ['MERLIN', 'PERCIVAL', 'LOYAL_SERVANT', 'ASSASSIN', 'MORGANA', 'MORDRED', 'OBERON', 'MINION'];
+    return `<div class="card flat"><h3>Characters in this game</h3><div class="names">${order.filter((r) => counts[r]).map((r) => {
+      const info = ROLE_INFO[r];
+      return `<span class="tag ${info.loyalty === 'GOOD' ? 'good' : 'evil'}">${esc(info.name)}${counts[r] > 1 ? ' ×' + counts[r] : ''}</span>`;
+    }).join('')}</div></div>`;
   }
 
   // ---- role reveal
@@ -741,6 +776,7 @@
       case 'start': act('start'); break;
       case 'kick': confirmDialog('Remove ' + nameOf(id) + ' from the table?', () => act('kick', { playerId: id })); break;
       case 'toggleLady': act('setOptions', { ladyOfTheLake: !s.ladyEnabled }); break;
+      case 'toggleChar': { const k = el.getAttribute('data-key'); const o = {}; o[k] = !s.options[k]; act('setOptions', o); break; }
       case 'toggleRole': ui.roleShown = !ui.roleShown; render(); break;
       case 'confirmRole': ui.roleShown = false; act('confirmRole'); break;
       case 'forceContinue': act('forceContinue'); break;

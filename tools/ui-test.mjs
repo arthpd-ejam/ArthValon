@@ -118,6 +118,23 @@ await pages[0].waitForSelector('[data-action=start]:not([disabled])');
 await shot(pages[0], 'lobby-host');
 await shot(pages[1], 'lobby-player');
 
+// Character toggles: at 5 players Mordred only fits if Morgana is off; the server refuses otherwise.
+await pages[0].click('[data-action=toggleChar][data-key=mordred]');
+await pages[0].waitForSelector('.toast:not(.hidden)');
+const toastText = await pages[0].textContent('#toast');
+if (!/evil roles/.test(toastText)) fail('expected a refusal when Mordred does not fit: ' + toastText);
+await pages[0].click('[data-action=toggleChar][data-key=morgana]');
+await waitFor(pages[0], (s) => s.options.morgana === false, 'morgana off');
+await pages[0].click('[data-action=toggleChar][data-key=mordred]');
+await waitFor(pages[0], (s) => s.options.mordred === true && s.rolesInPlay.includes('MORDRED'), 'mordred on');
+await waitFor(pages[1], (s) => s.rolesInPlay.includes('MORDRED'), 'players see the deck');
+await shot(pages[0], 'lobby-characters');
+// Back to the standard deck for the rest of the test.
+await pages[0].click('[data-action=toggleChar][data-key=mordred]');
+await waitFor(pages[0], (s) => s.options.mordred === false, 'mordred off');
+await pages[0].click('[data-action=toggleChar][data-key=morgana]');
+await waitFor(pages[0], (s) => s.options.morgana === true, 'morgana on');
+
 // Lady of the Lake on at 5 players (host toggle)
 await pages[0].click('[data-action=toggleLady]');
 await waitFor(pages[0], (s) => s.ladyEnabled === true, 'lady enabled');
@@ -174,7 +191,7 @@ console.log('Simulating a phone losing Wi-Fi…');
 
 // On any unexpected error, dump what every tab shows so the failure can be understood from the log.
 const dumpAndExit = async (err) => {
-  console.error('UNEXPECTED:', err && err.message);
+  console.error('UNEXPECTED:', err && (err.stack || err.message));
   for (const p of pages) {
     try {
       const s = await state(p);
@@ -247,6 +264,8 @@ while (guard++ < 400) {
     const page = pages[i], s = states[i];
     if (!s || s.phase !== phase) continue;
     const pa = s.you.pendingAction;
+    // The snapshot above can be stale after a slow step (announcement waits, reloads): re-check before acting.
+    if (pa !== 'WAIT' && (await state(page)).you.pendingAction !== pa) continue;
     switch (pa) {
       case 'PICK_TEAM': {
         await shot(page, `q${s.quest}-pick-team-leader`);
@@ -295,8 +314,7 @@ while (guard++ < 400) {
         await shot(page, 'lady-pick');
         const other = pages.find((p, j) => j !== i);
         await shot(other, 'lady-waiting');
-        const btn = await page.$('[data-action=pickLady]:not([disabled])');
-        await btn.click();
+        await page.click('[data-action=pickLady]:not([disabled])');
         await page.click('[data-action=ladyExamine]:not([disabled])');
         acted = true;
         break;
@@ -325,8 +343,7 @@ while (guard++ < 400) {
           await other.click('[data-action=closeHistory]');
           historyShot = true;
         }
-        const btn = await page.$('[data-action=pickAssassin]:not([disabled])');
-        await btn.click();
+        await page.click('[data-action=pickAssassin]:not([disabled])');
         await page.click('[data-action=assassinate]:not([disabled])');
         await page.waitForSelector('[data-action=confirmYes]');
         await shot(page, 'confirm-dialog');

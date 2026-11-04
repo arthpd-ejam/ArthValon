@@ -53,7 +53,7 @@ Tips
 The app ships with its own drawn role cards. If you'd rather see the card art you know from the physical game, add pictures of your own cards and they are used automatically:
 
 1. Photograph or scan each role card (or use images you already have) and save them as PNG files with exactly these names:
-   `merlin.png`, `percival.png`, `loyal_servant.png`, `morgana.png`, `assassin.png`, `minion.png`.
+   `merlin.png`, `percival.png`, `loyal_servant.png`, `morgana.png`, `assassin.png`, `minion.png`, `mordred.png`, `oberon.png`.
    Portrait orientation, roughly 600×800 pixels is plenty; keep each file under ~300 KB so phones load them quickly.
 2. Put them in the folder `server/src/main/resources/web/img/` (next to the `.svg` files) and commit/push, or upload them through GitHub's web interface (**Add file → Upload files** inside that folder).
 3. GitHub Actions builds a new APK with the pictures bundled. Install it on the host phone as in section 1.
@@ -73,7 +73,7 @@ If a `.png` is missing the drawn `.svg` card is shown instead. (The official art
 
 ★ Quest 4 needs **two** Fail cards to fail at 7+ players.
 
-* Good: Merlin, Percival, Loyal Servants. Evil: Morgana, Assassin, Minions of Mordred.
+* Good: Merlin, Percival, Loyal Servants. Evil: Assassin, Morgana, Minions of Mordred. Merlin and the Assassin are always in; in the lobby the host can switch Percival, Morgana, **Mordred** (evil, hidden from Merlin) and **Oberon** (evil, unknown to the other evil players and knows nobody) on or off. The evil specials must fit the evil seats (Assassin + 1 at 5–6 players, + 2 at 7–9, + 3 at 10).
 * Merlin sees who is evil. Percival sees Merlin and Morgana without knowing which is which. Evil players see each other. Loyal Servants see only their own role.
 * Leadership rotates in seat (join) order; the first leader is random.
 * The leader proposes a team; everyone votes; votes are revealed together with names. Five rejections in a row = evil wins.

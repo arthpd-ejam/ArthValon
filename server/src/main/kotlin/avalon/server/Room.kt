@@ -148,7 +148,17 @@ class Room(
                 if (game.findPlayer(pid) == null) throw IllegalActionException("You are no longer in this game")
                 when (action) {
                     "start" -> game.start(pid)
-                    "setOptions" -> game.setOptions(pid, GameOptions(ladyOfTheLake = obj["ladyOfTheLake"]?.jsonPrimitive?.booleanOrNull))
+                    "setOptions" -> {
+                        val cur = game.options
+                        fun flag(key: String, def: Boolean) = obj[key]?.jsonPrimitive?.booleanOrNull ?: def
+                        game.setOptions(pid, GameOptions(
+                            ladyOfTheLake = if (obj.containsKey("ladyOfTheLake")) obj["ladyOfTheLake"]?.jsonPrimitive?.booleanOrNull else cur.ladyOfTheLake,
+                            percival = flag("percival", cur.percival),
+                            morgana = flag("morgana", cur.morgana),
+                            mordred = flag("mordred", cur.mordred),
+                            oberon = flag("oberon", cur.oberon),
+                        ))
+                    }
                     "kick" -> {
                         val target = obj.str("playerId") ?: throw IllegalActionException("Missing player")
                         game.kick(pid, target)

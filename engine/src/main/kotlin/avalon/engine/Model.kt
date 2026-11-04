@@ -10,6 +10,8 @@ enum class Role(val good: Boolean, val displayName: String) {
     LOYAL_SERVANT(true, "Loyal Servant of Arthur"),
     MORGANA(false, "Morgana"),
     ASSASSIN(false, "Assassin"),
+    MORDRED(false, "Mordred"),
+    OBERON(false, "Oberon"),
     MINION(false, "Minion of Mordred");
 
     val loyalty: Loyalty get() = if (good) Loyalty.GOOD else Loyalty.EVIL
@@ -47,7 +49,15 @@ class IllegalActionException(message: String) : RuntimeException(message)
 data class GameOptions(
     /** null = default (Lady of the Lake on at 7+ players). */
     val ladyOfTheLake: Boolean? = null,
-)
+    /** Optional characters. Merlin and the Assassin are always in play. */
+    val percival: Boolean = true,
+    val morgana: Boolean = true,
+    val mordred: Boolean = false,
+    val oberon: Boolean = false,
+) {
+    /** Evil characters besides the Assassin that these options ask for. */
+    val specialEvilCount: Int get() = listOf(morgana, mordred, oberon).count { it }
+}
 
 /** Per player-count configuration from the official rules. */
 data class Setup(val players: Int, val good: Int, val evil: Int, val questSizes: List<Int>) {
@@ -66,11 +76,22 @@ data class Setup(val players: Int, val good: Int, val evil: Int, val questSizes:
 
         fun forPlayers(n: Int): Setup = TABLE[n] ?: throw IllegalActionException("Avalon needs 5 to 10 players")
 
-        fun roles(n: Int): List<Role> {
+        /** Throws if the optional characters do not fit this player count. */
+        fun validate(n: Int, o: GameOptions) {
             val s = forPlayers(n)
-            val good = listOf(Role.MERLIN, Role.PERCIVAL) + List(s.good - 2) { Role.LOYAL_SERVANT }
-            val evil = listOf(Role.MORGANA, Role.ASSASSIN) + List(s.evil - 2) { Role.MINION }
-            return good + evil
+            val evilSpecials = 1 + o.specialEvilCount // Assassin + chosen
+            if (evilSpecials > s.evil) throw IllegalActionException(
+                "With $n players there are only ${s.evil} evil roles: the Assassin plus at most ${s.evil - 1} of Morgana, Mordred and Oberon")
+            if (o.morgana && !o.percival) throw IllegalActionException("Morgana only makes sense together with Percival")
+        }
+
+        fun roles(n: Int, o: GameOptions = GameOptions()): List<Role> {
+            validate(n, o)
+            val s = forPlayers(n)
+            val good = listOf(Role.MERLIN) + (if (o.percival) listOf(Role.PERCIVAL) else emptyList())
+            val evil = listOf(Role.ASSASSIN) + (if (o.morgana) listOf(Role.MORGANA) else emptyList()) +
+                (if (o.mordred) listOf(Role.MORDRED) else emptyList()) + (if (o.oberon) listOf(Role.OBERON) else emptyList())
+            return good + List(s.good - good.size) { Role.LOYAL_SERVANT } + evil + List(s.evil - evil.size) { Role.MINION }
         }
     }
 }
