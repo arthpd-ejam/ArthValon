@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f0a12"/><stop offset="1" stop-color="#070308"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#ff5c5c" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5c5c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" rx="22" fill="url(#bg)"/>
+  <rect width="300" height="400" rx="22" fill="url(#glow)"/>
+  <rect x="10" y="10" width="280" height="380" rx="16" fill="none" stroke="#ff5c5c" stroke-width="3" opacity="0.8"/>
+  
+  <path d="M150 55 Q205 90 205 190 L205 320 L95 320 L95 190 Q95 90 150 55Z" fill="#141620"/>
+  <path d="M150 62 Q195 95 195 180 L195 230 L105 230 L105 180 Q105 95 150 62Z" fill="#1f2230"/>
+  <path d="M118 140 Q150 110 182 140 L182 200 Q150 215 118 200Z" fill="#06070b"/>
+  <circle cx="135" cy="165" r="4" fill="#ff5c5c"/><circle cx="165" cy="165" r="4" fill="#ff5c5c"/>
+  <path d="M212 110 L232 300" stroke="#c8ccd6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M218 100 L232 118 L204 123 Z" fill="#e8c170"/>
+  <path d="M225 285 L245 310 L220 318 Z" fill="#c8ccd6"/>
+  <path d="M60 330 Q150 300 240 330" stroke="#5a0f1f" stroke-width="10" fill="none" opacity="0.6"/>
+
+  <rect x="30" y="330" width="240" height="44" rx="10" fill="#0b0d14" opacity="0.75"/>
+  <text x="150" y="359" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#ff5c5c" letter-spacing="2">ASSASSIN</text>
+</svg>

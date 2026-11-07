@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a0f2f"/><stop offset="1" stop-color="#0b040d"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#d98cff" stop-opacity="0.55"/><stop offset="1" stop-color="#d98cff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" rx="22" fill="url(#bg)"/>
+  <rect width="300" height="400" rx="22" fill="url(#glow)"/>
+  <rect x="10" y="10" width="280" height="380" rx="16" fill="none" stroke="#d98cff" stroke-width="3" opacity="0.8"/>
+  
+  <path d="M150 60 Q210 100 210 200 L210 320 L90 320 L90 200 Q90 100 150 60Z" fill="#2a1030"/>
+  <path d="M150 68 Q198 104 198 190 L198 240 L102 240 L102 190 Q102 104 150 68Z" fill="#3b1a44"/>
+  <path d="M120 150 Q150 120 180 150 L180 205 Q150 220 120 205Z" fill="#0b050d"/>
+  <circle cx="137" cy="172" r="4" fill="#ff8c5c"/><circle cx="163" cy="172" r="4" fill="#ff8c5c"/>
+  <path d="M60 300 L240 300 L240 320 L60 320 Z" fill="#1a0a1e"/>
+  <path d="M70 110 L88 150 L70 190 L52 150 Z" fill="#7a2a8a" opacity="0.9"/>
+  <path d="M230 110 L248 150 L230 190 L212 150 Z" fill="#7a2a8a" opacity="0.9"/>
+
+  <rect x="30" y="330" width="240" height="44" rx="10" fill="#0b0d14" opacity="0.75"/>
+  <text x="150" y="359" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#d98cff" letter-spacing="2">MINION</text>
+</svg>

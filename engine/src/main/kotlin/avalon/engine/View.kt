@@ -37,6 +37,8 @@ data class PlayerView(
     /** During ROLE_REVEAL: players who confirmed they saw their role. */
     val readyIds: List<String>,
     val options: GameOptions,
+    /** Every role card that is (or would be) dealt with the current options and player count. Public. */
+    val rolesInPlay: List<Role> = emptyList(),
     val gameOver: GameOverView? = null,
     /** Human readable description of the last thing that happened; same for everyone. */
     val lastEvent: String? = null,
