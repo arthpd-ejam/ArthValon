@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import avalon.server.AvalonServer
+import avalon.server.GameKind
 
 /**
  * Keeps the Avalon server alive while the host phone's screen is off.
@@ -32,6 +33,7 @@ class HostService : Service() {
         if (server == null) {
             try {
                 val s = AvalonServer(port = PORT)
+                s.selectedGame = selectedGame(this)
                 s.start(wait = false)
                 server = s
                 Log.i(TAG, "Server started on port $PORT, host url ${s.hostUrl()}")
@@ -45,8 +47,9 @@ class HostService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val url = server?.joinUrlFor(AvalonServer.bestLanAddress())
-        val text = if (url != null) getString(R.string.notification_text, url) else getString(R.string.server_running, PORT)
+        val game = selectedGame(this)
+        val url = server?.joinUrlFor(AvalonServer.bestLanAddress(), game)
+        val text = if (url != null) getString(R.string.notification_text, url, game.displayName) else getString(R.string.server_running, PORT)
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(text))
         return START_STICKY
     }
@@ -99,6 +102,20 @@ class HostService : Service() {
         /** The running server, shared with the activities. */
         @Volatile var server: AvalonServer? = null
         @Volatile var lastError: String? = null
+
+        private const val PREFS = "host"
+        private const val KEY_GAME = "game"
+
+        /** The game picked on the host screen (remembered between launches). */
+        fun selectedGame(context: Context): GameKind {
+            val name = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_GAME, null)
+            return GameKind.values().firstOrNull { it.name == name } ?: GameKind.AVALON
+        }
+
+        fun setSelectedGame(context: Context, game: GameKind) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_GAME, game.name).apply()
+            server?.selectedGame = game
+        }
 
         fun start(context: Context) {
             val i = Intent(context, HostService::class.java)

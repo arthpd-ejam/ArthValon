@@ -38,7 +38,10 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     maxHeapSize = "1g"
-    testLogging { events("failed"); showStandardStreams = false }
+    testLogging {
+        events("failed"); showStandardStreams = false
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 // Fat jar so the server can be started with a single `java -jar`.

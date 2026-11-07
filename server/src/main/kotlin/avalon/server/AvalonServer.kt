@@ -12,6 +12,10 @@ import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.response.cacheControl
+import io.ktor.server.request.path
+import io.ktor.server.request.queryString
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -40,6 +44,12 @@ class AvalonServer(
     val room = Room(hostKey = hostKey ?: Room.randomToken(10), joinUrl = { joinUrlFor(joinAddress()) })
     val hostKey: String get() = room.hostKey
 
+    /** The Coup table, served at /coup/ with its own WebSocket (/coup/ws). Same host key as Avalon. */
+    val coupRoom = CoupRoom(hostKey = room.hostKey, joinUrl = { joinUrlFor(joinAddress(), GameKind.COUP) })
+
+    /** Which game the bare address (http://ip:8080/) opens. The host app sets this from its game picker. */
+    @Volatile var selectedGame: GameKind = GameKind.AVALON
+
     private var engine: ApplicationEngine? = null
 
     /** The port actually bound (useful when started with port 0 in tests). */
@@ -47,10 +57,12 @@ class AvalonServer(
         kotlinx.coroutines.runBlocking { e.resolvedConnectors().first().port }
     } ?: port
 
-    fun joinUrlFor(address: String?): String? = address?.let { "http://$it:${boundPort}/" }
+    fun joinUrlFor(address: String?, game: GameKind = GameKind.AVALON): String? =
+        address?.let { "http://$it:${boundPort}/${game.path}" }
 
     /** URL that makes the joining browser the host (keep it on the host phone only). */
-    fun hostUrl(address: String = "127.0.0.1") = "http://$address:${boundPort}/?host=$hostKey"
+    fun hostUrl(address: String = "127.0.0.1", game: GameKind = GameKind.AVALON) =
+        "http://$address:${boundPort}/${game.path}?host=$hostKey"
 
     fun start(wait: Boolean = false) {
         engine = embeddedServer(CIO, port = port, host = host) { module() }.start(wait = wait)
@@ -72,6 +84,35 @@ class AvalonServer(
         intercept(ApplicationCallPipeline.Plugins) { call.response.cacheControl(CacheControl.NoCache(null)) }
         routing {
             get("/health") { call.respondText("ok", ContentType.Text.Plain) }
+            // The bare address opens whichever game the host picked. Explicit routes win over the static fallback.
+            get("/") {
+                if (selectedGame == GameKind.COUP) {
+                    call.respondRedirect("/coup/" + (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: ""))
+                } else respondResource(call, "web/index.html", ContentType.Text.Html)
+            }
+            // "/coup" and "/coup/" may reach either route depending on trailing-slash handling: serve the page for
+            // the slash form and redirect only the bare form, so this can never loop.
+            get("/coup") {
+                if (call.request.path().endsWith("/")) respondResource(call, "web/coup/index.html", ContentType.Text.Html)
+                else call.respondRedirect("/coup/" + (call.request.queryString().takeIf { it.isNotEmpty() }?.let { "?$it" } ?: ""))
+            }
+            get("/coup/") { respondResource(call, "web/coup/index.html", ContentType.Text.Html) }
+            webSocket("/coup/ws") {
+                val conn = Connection(this)
+                val writer = launch {
+                    for (text in conn.outbox) send(Frame.Text(text))
+                }
+                try {
+                    for (frame in incoming) {
+                        if (frame is Frame.Text) coupRoom.onMessage(conn, frame.readText())
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    conn.outbox.close()
+                    writer.cancel()
+                    coupRoom.onClose(conn)
+                }
+            }
             webSocket("/ws") {
                 val conn = Connection(this)
                 // Single writer per socket keeps message order.
@@ -94,6 +135,12 @@ class AvalonServer(
                 default("index.html")
             }
         }
+    }
+
+    private suspend fun respondResource(call: io.ktor.server.application.ApplicationCall, path: String, type: ContentType) {
+        val bytes = AvalonServer::class.java.classLoader.getResourceAsStream(path)?.use { it.readBytes() }
+        if (bytes == null) call.respondText("Not found", ContentType.Text.Plain, io.ktor.http.HttpStatusCode.NotFound)
+        else call.respondBytes(bytes, type)
     }
 
     companion object {
@@ -129,4 +176,10 @@ class AvalonServer(
 
         fun bestLanAddress(): String? = lanAddresses().firstOrNull()?.second
     }
+}
+
+/** The games this server hosts. [path] is relative to the server root. */
+enum class GameKind(val path: String, val displayName: String) {
+    AVALON("", "Avalon"),
+    COUP("coup/", "Coup"),
 }
