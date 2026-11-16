@@ -80,6 +80,11 @@ async function waitFor(page, pred, what, timeout = 10000) {
   throw new Error(`${page.name}: timed out waiting for ${what}`);
 }
 async function tap(page, sel) {
+  // A result announcement (not a confirmation) may be covering the screen: dismiss it like a player would.
+  await page.evaluate(() => {
+    const m = document.getElementById('modal');
+    if (m && !m.classList.contains('hidden') && !m.querySelector('[data-action=confirmYes]')) m.querySelector('.modal-x').click();
+  });
   await page.locator(sel).first().click({ timeout: 4000 });
 }
 async function confirmIfAsked(page) {
@@ -99,10 +104,10 @@ async function checkChallengeAnnounced(players, challenger, label) {
     seq = (await state(challenger)).lastChallenge.seq;
   } catch (e) { fail(`${challenger.name}: challenge was not recorded`); return; }
   challengesChecked = seq;
-  for (const p of players) {
-    const ok = await p.waitForFunction(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') && /Challenge/.test(document.getElementById('modal-body').textContent); }, null, { timeout: 4000 }).then(() => true).catch(() => false);
-    if (!ok) fail(`${p.name}: no challenge announcement (seq ${seq})`);
-  }
+  // Check every tab at the same time (a slow runner must not let the dialog expire while we wait in turn).
+  const results = await Promise.all(players.map((p) => p.waitForFunction(() => { const m = document.getElementById('modal'); if (window.__coup.state && window.__coup.state.phase === 'GAME_OVER') return true; // the challenge ended the game: the winner dialog takes over
+    return m && !m.classList.contains('hidden') && /Challenge/.test(document.getElementById('modal-body').textContent); }, null, { timeout: 5000 }).then(() => true).catch(() => false)));
+  players.forEach((p, i) => { if (!results[i]) fail(`${p.name}: no challenge announcement (seq ${seq})`); });
   const proven = (await state(challenger)).lastChallenge.proven;
   await shot(players[0], `${label}-challenge-${proven ? 'proven' : 'bluff'}`);
 }

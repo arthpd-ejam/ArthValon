@@ -182,7 +182,9 @@
         <div class="big-result ${r.proven ? 'good' : 'evil'}" style="font-size:28px">${esc(title)}</div>${cards}
         <div class="counts" style="font-size:16px">${esc(text)}</div>
         <div class="timer"><div style="--ms:${CHALLENGE_MS}ms"></div></div></div>`, { cls: r.proven ? 'good' : 'evil' });
-    challengeTimer = setTimeout(() => { if (!modalOnYes) closeModal(); }, CHALLENGE_MS);
+    // The player who now has to act (choose a card to lose) gets a shorter look so the game keeps moving.
+    const mustAct = s.you.pending === 'LOSE_INFLUENCE' || s.you.pending === 'TAKE_ACTION';
+    challengeTimer = setTimeout(() => { if (!modalOnYes) closeModal(); }, mustAct ? 3500 : CHALLENGE_MS);
   }
 
   // ------------------------------------------------------------ data helpers
