@@ -652,7 +652,19 @@
         break;
       }
       case 'pass': act('pass'); break;
-      case 'challenge': act('challenge'); break;
+      case 'challenge': {
+        const pd = s && s.pending;
+        let text = 'Challenge? If they really have the card, you lose an influence.';
+        if (pd && pd.blockerId && s.you.pending === 'RESPOND_BLOCK') {
+          text = `Challenge ${nameOf(pd.blockerId)}'s block with the ${cardName(pd.blockCharacter)}? If they really have it, you lose an influence.`;
+        } else if (pd && pd.action === 'EMBEZZLE') {
+          text = `Challenge ${nameOf(pd.actorId)}'s Embezzle (claiming no Duke)? If they really have no Duke, you lose an influence.`;
+        } else if (pd && pd.claim) {
+          text = `Challenge ${nameOf(pd.actorId)}'s claim of the ${cardName(pd.claim)}? If they really have it, you lose an influence.`;
+        }
+        confirmDialog(text, () => act('challenge'));
+        break;
+      }
       case 'block': act('block', { card: el.getAttribute('data-card') }); break;
       case 'loseCard': {
         const c = s.you.cards[index];

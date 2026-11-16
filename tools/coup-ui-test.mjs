@@ -143,7 +143,14 @@ async function playGame(players, label) {
           case 'RESPOND': {
             await shot(page, `${label}-respond-${s.pending.action.toLowerCase()}`);
             const r = rand(10);
-            if (r < 2 && m.canChallenge) { await tap(page, '[data-action=challenge]'); await checkChallengeAnnounced(players, page, label); }
+            if (r < 2 && m.canChallenge) {
+              await tap(page, '[data-action=challenge]');
+              await page.waitForSelector('[data-action=confirmYes]', { timeout: 3000 }).catch(() => fail(`${page.name}: no confirmation before challenging`));
+              await sleep(350); // let the dialog finish its fade-in before the screenshot
+              await shot(page, `${label}-challenge-confirm`);
+              await confirmIfAsked(page);
+              await checkChallengeAnnounced(players, page, label);
+            }
             else if (r < 4 && m.canBlockWith.length) await tap(page, '[data-action=block]');
             else await tap(page, '[data-action=pass]');
             acted = true;
@@ -151,7 +158,12 @@ async function playGame(players, label) {
           }
           case 'RESPOND_BLOCK': {
             await shot(page, `${label}-respond-block`);
-            if (rand(3) === 0) { await tap(page, '[data-action=challenge]'); await checkChallengeAnnounced(players, page, label); } else await tap(page, '[data-action=pass]');
+            if (rand(3) === 0) {
+              await tap(page, '[data-action=challenge]');
+              await page.waitForSelector('[data-action=confirmYes]', { timeout: 3000 }).catch(() => fail(`${page.name}: no confirmation before challenging a block`));
+              await confirmIfAsked(page);
+              await checkChallengeAnnounced(players, page, label);
+            } else await tap(page, '[data-action=pass]');
             acted = true;
             break;
           }
