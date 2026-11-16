@@ -11,6 +11,7 @@ val androidAvailable = System.getenv("ANDROID_HOME") != null ||
 buildscript {
     repositories {
         mavenCentral()
+        maven("https://maven-central.storage-download.googleapis.com/maven2/")
         google()
     }
     dependencies {
