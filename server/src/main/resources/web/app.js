@@ -795,7 +795,7 @@
       case 'ladyConfirm': act('ladyConfirm'); break;
       case 'pickAssassin': ui.pickedAssassin = ui.pickedAssassin === id ? null : id; render(); break;
       case 'assassinate': if (ui.pickedAssassin) { const t = ui.pickedAssassin; confirmDialog('Assassinate ' + nameOf(t) + '? This ends the game.', () => act('assassinate', { playerId: t })); } break;
-      case 'playAgain': act('playAgain'); break;
+      case 'playAgain': confirmDialog('Start a new game with the same players? This closes the results for everyone and deals new roles.', () => act('playAgain')); break;
       case 'openHistory': ui.historyOpen = true; renderHistory(); break;
       case 'allowRejoin': act('allowRejoin', { playerId: id }); break;
       case 'restart': confirmDialog('Abandon this game and send everyone back to the lobby? Roles will be dealt again.', () => { closeHistory(); act('restart'); }); break;

@@ -49,6 +49,7 @@ const origin = `http://127.0.0.1:${PORT}`;
 const browser = await chromium.launch();
 const requests = [];
 let shotIndex = 0;
+let challengesChecked = 0;
 const taken = new Set();
 async function shot(page, key) {
   if (taken.has(key)) return;
@@ -89,6 +90,23 @@ async function confirmIfAsked(page) {
 let rnd = 12345;
 const rand = (n) => { rnd = (rnd * 1103515245 + 12345) & 0x7fffffff; return rnd % n; };
 
+/** After a challenge, every tab in the game must show the big result dialog with the revealed card. */
+async function checkChallengeAnnounced(players, challenger, label) {
+  const before = challengesChecked;
+  let seq = before;
+  try {
+    await challenger.waitForFunction((b) => window.__coup && window.__coup.state && window.__coup.state.lastChallenge && window.__coup.state.lastChallenge.seq > b, before, { timeout: 5000 });
+    seq = (await state(challenger)).lastChallenge.seq;
+  } catch (e) { fail(`${challenger.name}: challenge was not recorded`); return; }
+  challengesChecked = seq;
+  for (const p of players) {
+    const ok = await p.waitForFunction(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') && /Challenge/.test(document.getElementById('modal-body').textContent); }, null, { timeout: 4000 }).then(() => true).catch(() => false);
+    if (!ok) fail(`${p.name}: no challenge announcement (seq ${seq})`);
+  }
+  const proven = (await state(challenger)).lastChallenge.proven;
+  await shot(players[0], `${label}-challenge-${proven ? 'proven' : 'bluff'}`);
+}
+
 async function playGame(players, label) {
   let steps = 0;
   let dropped = false;
@@ -125,7 +143,7 @@ async function playGame(players, label) {
           case 'RESPOND': {
             await shot(page, `${label}-respond-${s.pending.action.toLowerCase()}`);
             const r = rand(10);
-            if (r < 2 && m.canChallenge) await tap(page, '[data-action=challenge]');
+            if (r < 2 && m.canChallenge) { await tap(page, '[data-action=challenge]'); await checkChallengeAnnounced(players, page, label); }
             else if (r < 4 && m.canBlockWith.length) await tap(page, '[data-action=block]');
             else await tap(page, '[data-action=pass]');
             acted = true;
@@ -133,7 +151,7 @@ async function playGame(players, label) {
           }
           case 'RESPOND_BLOCK': {
             await shot(page, `${label}-respond-block`);
-            if (rand(3) === 0) await tap(page, '[data-action=challenge]'); else await tap(page, '[data-action=pass]');
+            if (rand(3) === 0) { await tap(page, '[data-action=challenge]'); await checkChallengeAnnounced(players, page, label); } else await tap(page, '[data-action=pass]');
             acted = true;
             break;
           }

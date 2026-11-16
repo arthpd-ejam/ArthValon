@@ -25,7 +25,27 @@ data class CoupView(
     /** Public game log, newest last. */
     val log: List<String>,
     val lastEvent: String? = null,
+    /** The most recent challenge and how it ended. Public: everyone saw the card. */
+    val lastChallenge: ChallengeResult? = null,
     val version: Long,
+)
+
+/**
+ * Outcome of a challenge. When [proven] is true the defender showed [claimed] to
+ * everyone, shuffled it back into the Court deck and drew a replacement; the
+ * challenger loses an influence. Otherwise the defender was bluffing and loses one.
+ */
+@Serializable
+data class ChallengeResult(
+    val seq: Int,
+    val challengerId: String,
+    val defenderId: String,
+    val claimed: CoupCard?,          // null for an Embezzle challenge (claim is "no Duke")
+    val aboutBlock: Boolean,
+    val proven: Boolean,
+    val loserId: String,
+    /** Cards the defender showed and replaced (one proven card, or both hidden cards after an innocent Embezzle). */
+    val shown: List<CoupCard>,
 )
 
 @Serializable

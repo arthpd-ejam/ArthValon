@@ -261,11 +261,16 @@ while (guard++ < 400) {
   }
   let acted = false;
   for (let i = 0; i < pages.length; i++) {
-    const page = pages[i], s = states[i];
+    const page = pages[i];
+    let s = states[i];
     if (!s || s.phase !== phase) continue;
     const pa = s.you.pendingAction;
     // The snapshot above can be stale after a slow step (announcement waits, reloads): re-check before acting.
-    if (pa !== 'WAIT' && (await state(page)).you.pendingAction !== pa) continue;
+    if (pa !== 'WAIT') {
+      const live = await state(page);
+      if (!live || live.you.pendingAction !== pa) continue;
+      s = live; // act on, and wait against, the freshest version so we never act twice
+    }
     switch (pa) {
       case 'PICK_TEAM': {
         await shot(page, `q${s.quest}-pick-team-leader`);
@@ -372,6 +377,8 @@ if (over.gameOver.ladyResults.length !== 1) fail('expected exactly one Lady of t
 
 // Play again keeps the players and deals new roles.
 await pages[0].click('[data-action=playAgain]');
+await pages[0].waitForSelector('[data-action=confirmYes]');
+await pages[0].click('[data-action=confirmYes]');
 await Promise.all(pages.map((p) => waitFor(p, (s) => s.phase === 'ROLE_REVEAL', 'new game')));
 const s2 = await state(pages[1]);
 if (s2.players.length !== 5 || s2.quests.length) fail('play again did not reset with the same players');

@@ -50,6 +50,13 @@ class CoupGame(private val random: Random = Random.Default) {
 
     private class PendingLoss(val playerId: String, val reason: String, val then: () -> Unit)
 
+    private var lastChallenge: ChallengeResult? = null
+    private var challengeSeq = 0
+    private fun recordChallenge(challenger: String, defender: String, claimed: CoupCard?, aboutBlock: Boolean, proven: Boolean, shown: List<CoupCard>) {
+        lastChallenge = ChallengeResult(++challengeSeq, challenger, defender, claimed, aboutBlock, proven,
+            loserId = if (proven) challenger else defender, shown = shown)
+    }
+
     // ---- inspection (tests only; never send to clients) ----
     val secretDeck: List<CoupCard> get() = deck
     val currentTurnPlayer: CoupPlayer? get() = if (phase == CoupPhase.LOBBY) null else seats.getOrNull(turnSeat)
@@ -156,6 +163,7 @@ class CoupGame(private val random: Random = Random.Default) {
         clearGame()
         phase = CoupPhase.LOBBY
         log.clear()
+        lastChallenge = null
         bump("The host restarted the game. Back to the lobby.", log = false)
     }
 
@@ -177,6 +185,7 @@ class CoupGame(private val random: Random = Random.Default) {
     private fun beginGame() {
         clearGame()
         log.clear()
+        lastChallenge = null
         mode = options.mode
         val n = seats.size
         val copies = copiesPerCharacter(n, mode)
@@ -424,14 +433,17 @@ class CoupGame(private val random: Random = Random.Default) {
         val a = player(t.actorId)
         if (t.action == ActionType.EMBEZZLE) {
             if (a.has(CoupCard.DUKE)) {
+                recordChallenge(c.id, a.id, null, aboutBlock = false, proven = false, shown = emptyList())
                 bump("${c.name} challenges: ${a.name} DID have the Duke. The Embezzle fails.")
                 loseInfluence(a.id, "caught embezzling with the Duke") { endTurn() }
             } else {
                 // Proved innocent: the shown cards go back into the deck and are replaced.
                 val hiddenCards = a.cards.filter { !it.revealed }
+                val shown = hiddenCards.map { it.character }
                 hiddenCards.forEach { deck += it.character }
                 deck.shuffle(random)
                 hiddenCards.forEach { it.character = draw() }
+                recordChallenge(c.id, a.id, null, aboutBlock = false, proven = true, shown = shown)
                 bump("${c.name} challenges: ${a.name} had no Duke and draws new cards. ${c.name} loses the challenge.")
                 t.challengeSettled = true
                 loseInfluence(c.id, "lost a challenge") { resolveAction() }
@@ -441,11 +453,13 @@ class CoupGame(private val random: Random = Random.Default) {
         val claim = t.action.claim!!
         if (a.has(claim)) {
             swapProvenCard(a, claim)
+            recordChallenge(c.id, a.id, claim, aboutBlock = false, proven = true, shown = listOf(claim))
             bump("${c.name} challenges: ${a.name} reveals the ${claim.displayName} and draws a new card. ${c.name} loses the challenge.")
             t.challengeSettled = true
             loseInfluence(c.id, "lost a challenge") { afterActionChallengeLost(t) }
         } else {
             if (t.action == ActionType.ASSASSINATE) a.coins += t.paid // the action never happened
+            recordChallenge(c.id, a.id, claim, aboutBlock = false, proven = false, shown = emptyList())
             bump("${c.name} challenges: ${a.name} did NOT have the ${claim.displayName}. The ${t.action.displayName} fails.")
             loseInfluence(a.id, "was caught bluffing") { endTurn() }
         }
@@ -465,9 +479,11 @@ class CoupGame(private val random: Random = Random.Default) {
         val claim = t.blockCharacter!!
         if (b.has(claim)) {
             swapProvenCard(b, claim)
+            recordChallenge(c.id, b.id, claim, aboutBlock = true, proven = true, shown = listOf(claim))
             bump("${c.name} challenges the block: ${b.name} reveals the ${claim.displayName} and draws a new card. The block stands.")
             loseInfluence(c.id, "lost a challenge") { endTurn() }
         } else {
+            recordChallenge(c.id, b.id, claim, aboutBlock = true, proven = false, shown = emptyList())
             bump("${c.name} challenges the block: ${b.name} did NOT have the ${claim.displayName}. The ${t.action.displayName} goes ahead.")
             loseInfluence(b.id, "was caught bluffing") { resolveAction() }
         }
@@ -680,6 +696,7 @@ class CoupGame(private val random: Random = Random.Default) {
             winnerId = winnerId,
             log = log.takeLast(60),
             lastEvent = lastEvent,
+            lastChallenge = if (inGame) lastChallenge else null,
             version = version,
         )
     }

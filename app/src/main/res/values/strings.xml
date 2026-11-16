@@ -13,6 +13,8 @@
     <string name="open_in_browser">Open in Chrome instead</string>
     <string name="hotspot_settings">Hotspot settings</string>
     <string name="stop">Stop hosting</string>
+    <string name="stop_title">Stop hosting?</string>
+    <string name="stop_message">This shuts down the game server. Everyone at the table loses the current game and will have to join again.</string>
     <string name="notification_channel">Avalon host server</string>
     <string name="notification_title">ArthValon is hosting</string>
     <string name="notification_text">%2$s: friends can join at %1$s</string>

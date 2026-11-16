@@ -148,7 +148,41 @@
     if (prev && prev.phase !== state.phase && modalOnYes) closeModal();
     render();
     if (newEvent && prev && state.phase !== 'LOBBY') banner(state.lastEvent);
+    maybeAnnounceChallenge(state);
     maybeAnnounceWinner(state);
+  }
+
+  // ---- challenge announcement: everyone sees the revealed card
+  const CHALLENGE_MS = 7000;
+  let challengeTimer = null;
+  function maybeAnnounceChallenge(s) {
+    const r = s.lastChallenge;
+    if (!r || s.phase === 'LOBBY' || s.phase === 'GAME_OVER') { if (!r) store.set('challengeSeen', '0'); return; }
+    let seen = parseInt(store.get('challengeSeen') || '0', 10) || 0;
+    if (seen > r.seq) seen = 0; // new game
+    if (r.seq <= seen) return;
+    store.set('challengeSeen', String(r.seq));
+    const chal = nameOf(r.challengerId), def = nameOf(r.defenderId);
+    const what = r.aboutBlock ? 'block' : 'claim';
+    const claimName = r.claimed ? (CARDS[r.claimed] || { name: r.claimed }).name : 'no Duke';
+    let title, text, cards = '';
+    if (r.proven) {
+      title = r.claimed ? `${def} HAD the ${claimName}` : `${def} had no Duke`;
+      cards = `<div class="hand" style="justify-content:center;margin:8px 0">${r.shown.map((c) => cardHtml(c, { noAbility: true })).join('')}</div>`;
+      text = r.claimed
+        ? `${def} showed the ${claimName} to everyone, shuffled it back into the deck and drew a new card. ${chal} loses an influence for the failed challenge.`
+        : `${def} showed both cards, shuffled them back and drew new ones. ${chal} loses an influence for the failed challenge.`;
+      if (isMe(r.defenderId)) text += ' Check your cards: you have a new one.';
+    } else {
+      title = r.claimed ? `${def} did NOT have the ${claimName}` : `${def} DID have the Duke`;
+      text = `${chal} challenged ${def}'s ${what} and was right. ${def} loses an influence${r.claimed ? ` and the ${what} fails` : ''}.`;
+    }
+    clearTimeout(challengeTimer);
+    showModal(`<div class="announce"><div class="eyebrow">Challenge${r.aboutBlock ? ' of a block' : ''}</div>
+        <div class="big-result ${r.proven ? 'good' : 'evil'}" style="font-size:28px">${esc(title)}</div>${cards}
+        <div class="counts" style="font-size:16px">${esc(text)}</div>
+        <div class="timer"><div style="--ms:${CHALLENGE_MS}ms"></div></div></div>`, { cls: r.proven ? 'good' : 'evil' });
+    challengeTimer = setTimeout(() => { if (!modalOnYes) closeModal(); }, CHALLENGE_MS);
   }
 
   // ------------------------------------------------------------ data helpers
@@ -537,6 +571,7 @@
   let modalOnYes = null;
   function showModal(html, opts) {
     opts = opts || {};
+    if (opts.onYes && typeof challengeTimer !== 'undefined') clearTimeout(challengeTimer);
     modalOnYes = opts.onYes || null;
     modalBody.innerHTML = html;
     modalEl.querySelector('.modal-card').className = 'modal-card ' + (opts.cls || '');
@@ -632,7 +667,7 @@
       }
       case 'exchange': act('exchange', { keep: Array.from(ui.keep) }); break;
       case 'forceContinue': confirmDialog('Skip whoever is not answering? Missing answers count as Allow; a stuck card choice is random.', () => act('forceContinue')); break;
-      case 'playAgain': act('playAgain'); break;
+      case 'playAgain': confirmDialog('Start a new game with the same players? This closes the results for everyone and deals new cards.', () => act('playAgain')); break;
       case 'restart': confirmDialog('Abandon this game and send everyone back to the lobby?', () => { closeHistory(); act('restart'); }); break;
       case 'allowRejoin': act('allowRejoin', { playerId: id }); break;
       case 'toggleHide': ui.hideCards = !ui.hideCards; store.set('hideCards', ui.hideCards ? '1' : '0'); render(); break;

@@ -110,3 +110,7 @@ button.ccard:active { transform: scale(.98); }
 .mode-pick button.on { border-color: var(--gold); background: #3a3020; }
 .mode-pick button.on .t { color: var(--gold); }
 .winner-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.announce .timer { height: 4px; background: var(--line, #333a52); border-radius: 2px; overflow: hidden; margin-top: 14px; }
+.announce .timer > div { height: 100%; background: var(--gold, #e8c170); width: 100%; animation: drain var(--ms, 7000ms) linear forwards; }
+@keyframes drain { from { width: 100%; } to { width: 0; } }

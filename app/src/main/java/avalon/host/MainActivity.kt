@@ -82,8 +82,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         findViewById<Button>(R.id.stop).setOnClickListener {
-            HostService.stop(this)
-            finish()
+            // Stopping the server ends the game for everyone at the table: ask first.
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(R.string.stop_title)
+                .setMessage(R.string.stop_message)
+                .setPositiveButton(R.string.stop) { _, _ -> HostService.stop(this); finish() }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

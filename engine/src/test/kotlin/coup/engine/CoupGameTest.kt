@@ -119,6 +119,12 @@ class CoupGameTest {
         g.challenge("p2")
         assertEquals(CoupPhase.LOSE_INFLUENCE, g.phase)
         assertEquals("p2", g.currentLoserId)
+        // Everyone is told the Duke was shown and replaced; the shown card is public, the new one is not.
+        for (id in listOf("p1", "p2", "p3")) {
+            val r = g.viewFor(id).lastChallenge!!
+            assertEquals("p2", r.challengerId); assertEquals("p1", r.defenderId)
+            assertEquals(DUKE, r.claimed); assertTrue(r.proven); assertEquals("p2", r.loserId); assertEquals(listOf(DUKE), r.shown)
+        }
         g.chooseLostInfluence("p2", 1)
         assertTrue(g.p("p2").cards[1].revealed)
         assertEquals(ASSASSIN, g.p("p2").cards[1].character)
@@ -135,6 +141,8 @@ class CoupGameTest {
         g.declare("p1", ASSASSINATE, "p2")
         assertEquals(0, g.p("p1").coins)
         g.challenge("p3")
+        val r = g.viewFor("p2").lastChallenge!!
+        assertEquals(false, r.proven); assertEquals("p1", r.loserId); assertEquals(ASSASSIN, r.claimed); assertTrue(r.shown.isEmpty())
         g.chooseLostInfluence("p1", 0)
         assertEquals(3, g.p("p1").coins)
         assertTrue(g.p("p2").cards.none { it.revealed })
