@@ -1,6 +1,8 @@
 pluginManagement {
     repositories {
         mavenCentral()
+        // Public mirror of Maven Central: used when repo.maven.apache.org rate-limits CI runners (HTTP 429).
+        maven("https://maven-central.storage-download.googleapis.com/maven2/")
         gradlePluginPortal()
         google()
     }
@@ -9,6 +11,8 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        // Public mirror of Maven Central: used when repo.maven.apache.org rate-limits CI runners (HTTP 429).
+        maven("https://maven-central.storage-download.googleapis.com/maven2/")
         google()
     }
 }

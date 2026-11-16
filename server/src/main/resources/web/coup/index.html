@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0f1117">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Coup</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="coup.css">
+</head>
+<body>
+  <div id="status" class="status hidden" aria-live="polite"></div>
+  <main id="app" class="app"></main>
+  <div id="banner" class="banner hidden" aria-live="polite"></div>
+  <div id="toast" class="toast hidden" role="alert"></div>
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <div class="spinner"></div>
+      <div id="overlay-text">Connecting…</div>
+    </div>
+  </div>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-x" data-action="closeModal" aria-label="Close">×</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+  <div id="sheet" class="sheet hidden">
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <h2>Table</h2>
+        <button class="btn small ghost" data-action="closeHistory">Close</button>
+      </div>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

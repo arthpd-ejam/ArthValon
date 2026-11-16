@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#20102a"/><stop offset="1" stop-color="#07040b"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#ff5c5c" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5c5c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" rx="22" fill="url(#bg)"/><rect width="300" height="400" rx="22" fill="url(#glow)"/>
+  <rect x="10" y="10" width="280" height="380" rx="16" fill="none" stroke="#ff5c5c" stroke-width="3" opacity="0.8"/>
+  
+  <path d="M150 50 L205 95 L205 320 L95 320 L95 95 Z" fill="#1a1020"/>
+  <path d="M112 100 L188 100 L182 150 L118 150 Z" fill="#2b1b33"/>
+  <path d="M118 108 L182 108 L176 142 L124 142 Z" fill="#05030a"/>
+  <circle cx="137" cy="126" r="4" fill="#ff3b3b"/><circle cx="163" cy="126" r="4" fill="#ff3b3b"/>
+  <path d="M110 60 L125 95 L150 70 L175 95 L190 60 L185 100 L115 100 Z" fill="#6b5a1f"/>
+  <path d="M110 150 L190 150 L205 320 L95 320 Z" fill="#241530"/>
+  <path d="M150 150 L150 320 M120 190 L180 190" stroke="#8a2c3a" stroke-width="6"/>
+  <path d="M232 110 L232 300" stroke="#c8ccd6" stroke-width="8" stroke-linecap="round"/><path d="M218 112 L246 112 L246 122 L218 122 Z" fill="#8a2c3a"/>
+
+  <rect x="30" y="330" width="240" height="44" rx="10" fill="#0b0d14" opacity="0.75"/>
+  <text x="150" y="359" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#ff5c5c" letter-spacing="2">MORDRED</text>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f2a1e"/><stop offset="1" stop-color="#04110a"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#7ddf9a" stop-opacity="0.55"/><stop offset="1" stop-color="#7ddf9a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" rx="22" fill="url(#bg)"/><rect width="300" height="400" rx="22" fill="url(#glow)"/>
+  <rect x="10" y="10" width="280" height="380" rx="16" fill="none" stroke="#7ddf9a" stroke-width="3" opacity="0.8"/>
+  
+  <path d="M150 55 Q215 110 205 230 Q195 310 150 322 Q105 310 95 230 Q85 110 150 55Z" fill="#102a1e"/>
+  <circle cx="150" cy="150" r="36" fill="#d9c7a8"/>
+  <path d="M112 150 Q150 90 188 150 L195 215 Q150 195 105 215 Z" fill="#071a10"/>
+  <path d="M112 185 L188 185 L212 320 L88 320 Z" fill="#1d4a33"/>
+  <path d="M60 90 Q100 60 110 110 M240 90 Q200 60 190 110" stroke="#7ddf9a" stroke-width="5" fill="none" opacity="0.7"/>
+  <circle cx="150" cy="250" r="20" fill="#7ddf9a" opacity="0.85"/><circle cx="150" cy="250" r="32" fill="#7ddf9a" opacity="0.25"/>
+  <circle cx="60" cy="200" r="3" fill="#bdf5cc"/><circle cx="245" cy="250" r="3" fill="#bdf5cc"/><circle cx="70" cy="300" r="2.5" fill="#bdf5cc"/>
+
+  <rect x="30" y="330" width="240" height="44" rx="10" fill="#0b0d14" opacity="0.75"/>
+  <text x="150" y="359" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="bold" fill="#7ddf9a" letter-spacing="2">OBERON</text>
+</svg>

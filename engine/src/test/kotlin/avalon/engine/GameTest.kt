@@ -12,15 +12,16 @@ import kotlin.test.assertTrue
 
 class GameTest {
 
-    private fun lobby(n: Int, seed: Int = 1, lady: Boolean? = null): Game {
+    private fun lobby(n: Int, seed: Int = 1, lady: Boolean? = null, options: GameOptions? = null): Game {
         val g = Game(Random(seed))
         for (i in 0 until n) g.addPlayer("p$i", "Player $i", host = i == 0)
-        if (lady != null) g.setOptions("p0", GameOptions(ladyOfTheLake = lady))
+        if (options != null) g.setOptions("p0", options.copy(ladyOfTheLake = lady ?: options.ladyOfTheLake))
+        else if (lady != null) g.setOptions("p0", GameOptions(ladyOfTheLake = lady))
         return g
     }
 
-    private fun started(n: Int, seed: Int = 1, lady: Boolean? = null): Game {
-        val g = lobby(n, seed, lady)
+    private fun started(n: Int, seed: Int = 1, lady: Boolean? = null, options: GameOptions? = null): Game {
+        val g = lobby(n, seed, lady, options)
         g.start("p0")
         g.players.forEach { g.confirmRole(it.id) }
         assertEquals(Phase.TEAM_SELECTION, g.phase)
@@ -95,6 +96,44 @@ class GameTest {
             assertEquals(Setup.forPlayers(n).evil, roles.count { !it.good })
             assertEquals(n >= 7, g.viewFor("p0").ladyEnabled)
         }
+    }
+
+    @Test
+    fun `optional characters Mordred and Oberon follow the rules`() {
+        // Not enough evil seats at 5-6 players for Morgana + Mordred.
+        assertFailsWith<IllegalActionException> { lobby(5).setOptions("p0", GameOptions(mordred = true)) }
+        assertFailsWith<IllegalActionException> { lobby(6).setOptions("p0", GameOptions(oberon = true)) }
+        assertFailsWith<IllegalActionException> { lobby(7).setOptions("p0", GameOptions(mordred = true, oberon = true)) }
+        assertFailsWith<IllegalActionException> { lobby(7).setOptions("p0", GameOptions(percival = false)) } // Morgana needs Percival
+        // Dropping Morgana makes room at 5 players.
+        val small = started(5, options = GameOptions(morgana = false, mordred = true))
+        assertEquals(1, small.players.count { it.role == Role.MORDRED })
+        assertEquals(0, small.players.count { it.role == Role.MORGANA })
+        // Percival without Morgana sees only Merlin.
+        val perc = small.viewFor(small.byRole(Role.PERCIVAL).id).you
+        assertEquals(listOf(small.byRole(Role.MERLIN).id), perc.merlinOrMorgana)
+
+        for (n in 7..10) for (seed in 1..4) {
+            val g = started(n, seed = seed, options = GameOptions(mordred = true, oberon = n >= 10))
+            val all = g.viewFor("p0").rolesInPlay
+            assertEquals(n, all.size)
+            assertTrue(Role.MORDRED in all); assertEquals(n >= 10, Role.OBERON in all)
+            val evil = g.players.filter { !it.role!!.good }.map { it.id }.toSet()
+            val mordred = g.byRole(Role.MORDRED).id
+            val oberon = g.players.firstOrNull { it.role == Role.OBERON }?.id
+            // Merlin sees all evil except Mordred.
+            assertEquals(evil - mordred, g.viewFor(g.byRole(Role.MERLIN).id).you.knownEvil.toSet())
+            for (p in g.players.filter { !it.role!!.good }) {
+                val mates = g.viewFor(p.id).you.evilTeammates.toSet()
+                if (p.role == Role.OBERON) assertTrue(mates.isEmpty(), "Oberon knows nobody")
+                else assertEquals(evil - p.id - setOfNotNull(oberon), mates, "evil see each other but not Oberon")
+            }
+            if (oberon != null) assertTrue(oberon in g.viewFor(g.byRole(Role.MERLIN).id).you.knownEvil, "Merlin sees Oberon")
+            assertEquals(listOf(QuestCard.SUCCESS, QuestCard.FAIL), g.viewFor(mordred).you.allowedQuestCards)
+        }
+        // Options that stop fitting after players leave are rejected at start.
+        val g = lobby(7); g.setOptions("p0", GameOptions(mordred = true)); g.kick("p0", "p6"); g.kick("p0", "p5")
+        assertFailsWith<IllegalActionException> { g.start("p0") }
     }
 
     @Test
@@ -212,7 +251,9 @@ class GameTest {
         val g = started(5)
         g.proposeTeam(g.leader().id, listOf("p0", "p1"))
         g.vote("p0", Vote.APPROVE)
-        assertFailsWith<IllegalActionException> { g.vote("p0", Vote.REJECT) }
+        g.vote("p0", Vote.REJECT) // allowed to change until the vote closes
+        assertEquals(Vote.REJECT, g.viewFor("p0").you.yourVote)
+        g.vote("p0", Vote.APPROVE)
         val v = g.viewFor("p1")
         assertEquals(listOf("p0"), v.votedIds)
         assertTrue(v.voteHistory.isEmpty())
@@ -491,6 +532,23 @@ class GameTest {
             if (g.players.map { it.id to it.role } != before) changed = true
         }
         assertTrue(changed)
+    }
+
+    @Test
+    fun `host can restart a running game back to the lobby`() {
+        val g = started(6)
+        assertFailsWith<IllegalActionException> { g.restart("p1") }
+        g.approveTeam()
+        g.restart("p0")
+        assertEquals(Phase.LOBBY, g.phase)
+        assertEquals(6, g.players.size)
+        g.players.forEach { assertNull(it.role); assertNull(g.viewFor(it.id).you.role) }
+        assertNull(g.viewFor("p0").leaderId)
+        assertTrue(g.viewFor("p0").quests.isEmpty() && g.viewFor("p0").voteHistory.isEmpty())
+        assertFailsWith<IllegalActionException> { g.restart("p0") } // nothing running
+        g.start("p0")
+        assertEquals(Phase.ROLE_REVEAL, g.phase)
+        assertNotNull(g.players[0].role)
     }
 
     @Test
